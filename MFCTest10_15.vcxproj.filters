@@ -60,6 +60,15 @@
     <ClCompile Include="ILD2300\SensorTest.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="scanCONTROL2900\GetProfiles_Callback.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="scanCONTROL2900\DllLoader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="scanCONTROL2900\InterfaceLLT_2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ControlView.h">
@@ -117,6 +126,24 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ILD2300\SensorTest.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scanCONTROL2900\GetProfiles_Callback.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scanCONTROL2900\DllLoader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scanCONTROL2900\InterfaceLLT_2.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scanCONTROL2900\C_InterfaceLLT_2.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scanCONTROL2900\S_InterfaceLLT_2.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scanCONTROL2900\scanControlDataTypes.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

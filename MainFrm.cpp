@@ -7,10 +7,13 @@
 #include "MainFrm.h"
 #include "MFCTest10_15View.h"
 #include "ILD2300/SensorTest.h"
+#include "scanCONTROL2900/GetProfiles_Callback.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+
 
 
 // CMainFrame
@@ -86,6 +89,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	AfxBeginThread(&maint, NULL);
 
+	//µ÷ÓÃscanCONTROL2900
+	AfxBeginThread(&main_scan, NULL);
 	return 0;
 }
 

@@ -58,7 +58,7 @@ BOOL ContrlDlg::OnInitDialog(){
 	EndPath(hDC);
 	rl = CreateRectRgn(0, 0, 63, 63);
 	rl = PathToRegion(hDC);
-	m_Btn1.Create(L"", WS_CHILD | WS_VISIBLE, CPoint(67, 112), rl, this, UNI_BTN1, 2, RGB(245, 240,183), RGB(255, 255, 0), RGB(255, 255, 0), GetSysColor(COLOR_BTNFACE)); 
+	m_Btn1.Create("", WS_CHILD | WS_VISIBLE, CPoint(67, 112), rl, this, UNI_BTN1, 2, RGB(245, 240,183), RGB(255, 255, 0), RGB(255, 255, 0), GetSysColor(COLOR_BTNFACE)); 
 
 	DeleteObject(rl);
 
@@ -76,7 +76,7 @@ BOOL ContrlDlg::OnInitDialog(){
 	EndPath(hDC);
 	rt = CreateRectRgn(0, 0, 63, 63);
 	rt = PathToRegion(hDC);
-	m_Btn2.Create(L"", WS_CHILD | WS_VISIBLE, CPoint(107.5, 68), rt, this, UNI_BTN2, 2,RGB(196,226,158), RGB(0, 255, 0), RGB(0, 255, 0), GetSysColor(COLOR_BTNFACE)); 
+	m_Btn2.Create("", WS_CHILD | WS_VISIBLE, CPoint(107.5, 68), rt, this, UNI_BTN2, 2,RGB(196,226,158), RGB(0, 255, 0), RGB(0, 255, 0), GetSysColor(COLOR_BTNFACE)); 
 	DeleteObject(rt);
 
 	HRGN cr;
@@ -92,7 +92,7 @@ BOOL ContrlDlg::OnInitDialog(){
 	EndPath(hDC);
 	cr = CreateRectRgn(0, 0, 63, 63);
 	cr = PathToRegion(hDC);
-	m_Btn3.Create(L"", WS_CHILD | WS_VISIBLE, CPoint(148, 112), cr, this, UNI_BTN3, 2, RGB(250, 207, 194), RGB(242, 64, 50),RGB(242, 64, 50), GetSysColor(COLOR_BTNFACE)); 
+	m_Btn3.Create("", WS_CHILD | WS_VISIBLE, CPoint(148, 112), cr, this, UNI_BTN3, 2, RGB(250, 207, 194), RGB(242, 64, 50),RGB(242, 64, 50), GetSysColor(COLOR_BTNFACE)); 
 
 	HRGN rdd; 
 	BeginPath(hDC);
@@ -107,7 +107,7 @@ BOOL ContrlDlg::OnInitDialog(){
 	EndPath(hDC);
 	rdd = CreateRectRgn(0, 0, 63, 63);
 	rdd = PathToRegion(hDC);
-	m_Btn4.Create(L"", WS_CHILD | WS_VISIBLE, CPoint(107, 150), rdd, this, UNI_BTN4, 2,RGB(151, 244, 219), RGB(6, 236, 228), RGB(6, 236, 228), GetSysColor(COLOR_BTNFACE));  
+	m_Btn4.Create("", WS_CHILD | WS_VISIBLE, CPoint(107, 150), rdd, this, UNI_BTN4, 2,RGB(151, 244, 219), RGB(6, 236, 228), RGB(6, 236, 228), GetSysColor(COLOR_BTNFACE));  
 	DeleteObject(rdd);
 	HRGN center;
 	BeginPath(hDC);
@@ -120,7 +120,7 @@ BOOL ContrlDlg::OnInitDialog(){
 	center = CreateRectRgn(0, 0, 28, 28);
 	center = PathToRegion(hDC);
 
-	m_Btn5.Create(L"¸´Î»", WS_CHILD | WS_VISIBLE, CPoint(117, 120), center, this, UNI_BTN5, 2,  RGB(208, 208, 208),RGB(174,174,174),RGB(174,174,174), GetSysColor(COLOR_BTNFACE)); 
+	m_Btn5.Create("¸´Î»", WS_CHILD | WS_VISIBLE, CPoint(117, 120), center, this, UNI_BTN5, 2,  RGB(208, 208, 208),RGB(174,174,174),RGB(174,174,174), GetSysColor(COLOR_BTNFACE)); 
 	DeleteObject(center);
 
 
