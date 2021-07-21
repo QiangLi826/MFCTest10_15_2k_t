@@ -6,7 +6,7 @@
 
 #include "MainFrm.h"
 #include "MFCTest10_15View.h"
-
+#include "ILD2300/SensorTest.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -77,6 +77,14 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	SetIcon(m_hIcon, TRUE); // Set big icon
 
 	SetIcon(m_hIcon, FALSE); // Set small icon
+
+
+
+	//µ÷ÓÃILD2300
+	//char *argv[] = {"SensorTest", "ILD2300"};
+	//maint(2, argv);
+
+	AfxBeginThread(&maint, NULL);
 
 	return 0;
 }

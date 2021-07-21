@@ -84,11 +84,11 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>go2.lib;glut32.lib;Opengl32.lib;Glu32.lib;PylonC_MD_vc100.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MEDAQLib.lib;go2.lib;glut32.lib;Opengl32.lib;Glu32.lib;PylonC_MD_vc100.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalLibraryDirectories>D:\work\dependency\lib;D:\work\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32;D:\work\appending\glaux\lib;$(PYLON_DEV_DIR)lib\Win32;D:\work\appending\lib;D:\app\14400-3.6.5.33_SOFTWARE_Go2_SDK\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32\debug;$(PYLONC_ROOT)\lib\$(Platform);%(AdditionalLibraryDirectories);$(PYLON_ROOT)\lib\Win32;$(PYLON_GENICAM_ROOT)\library\CPP\Lib\Win32_i86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\work\MFCTest10_15_2k_t\ILD2300;D:\work\dependency\lib;D:\work\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32;D:\work\appending\glaux\lib;$(PYLON_DEV_DIR)lib\Win32;D:\work\appending\lib;D:\app\14400-3.6.5.33_SOFTWARE_Go2_SDK\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32\debug;$(PYLONC_ROOT)\lib\$(Platform);%(AdditionalLibraryDirectories);$(PYLON_ROOT)\lib\Win32;$(PYLON_GENICAM_ROOT)\library\CPP\Lib\Win32_i86</AdditionalLibraryDirectories>
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
       <StackCommitSize>1523712</StackCommitSize>
     </Link>
@@ -137,6 +137,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ExternFile.cpp" />
+    <ClCompile Include="ILD2300\SensorTest.cpp" />
     <ClCompile Include="MainFrm.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
@@ -163,6 +164,7 @@
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="C:\Users\Administrator\Documents\MEDAQLib-4.10.0.31036\MEDAQLib.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="constant.h" />
     <ClInclude Include="ContrlDlg.h" />
@@ -170,6 +172,8 @@
     <ClInclude Include="DataContext.h" />
     <ClInclude Include="DataProcess.h" />
     <ClInclude Include="Device.h" />
+    <ClInclude Include="ILD2300\MEDAQLib.h" />
+    <ClInclude Include="ILD2300\SensorTest.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="MFCTest10_15.h" />
     <ClInclude Include="MFCTest10_15Doc.h" />
@@ -196,6 +200,9 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MFCTest10_15.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="ILD2300\MEDAQLib.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -57,6 +57,9 @@
     <ClCompile Include="Camera.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ILD2300\SensorTest.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ControlView.h">
@@ -107,6 +110,15 @@
     <ClInclude Include="Camera.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="C:\Users\Administrator\Documents\MEDAQLib-4.10.0.31036\MEDAQLib.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ILD2300\MEDAQLib.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ILD2300\SensorTest.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\MFCTest10_15.ico">
@@ -148,5 +160,8 @@
     <ResourceCompile Include="MFCTest10_15.rc">
       <Filter>资源文件</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="ILD2300\MEDAQLib.lib" />
   </ItemGroup>
 </Project>
