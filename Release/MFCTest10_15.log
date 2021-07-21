@@ -1,0 +1,50 @@
+﻿生成启动时间为 2015/5/25 15:57:22。
+     1>项目“D:\app\MFCTest10_15 - 16 2k-好\MFCTest10_15.vcxproj”在节点 2 上(build 个目标)。
+     1>InitializeBuildStatus:
+         正在创建“Release\MFCTest10_15.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+       ClCompile:
+         所有输出均为最新。
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I"D:\app\14400-3.6.5.33_SOFTWARE_Go2_SDK\14400-3.6.5.33_SOFTWARE_Go2_SDK\include" /I"C:\Program Files\Basler\pylon 4\pylon\include" /I"C:\Program Files\Basler\pylon 4\genicam\library\CPP\include" /I"C:\Program Files\Basler\pylon 4\pylonc\include" /Zi /nologo /W3 /WX- /O2 /Oy- /GL /D WIN32 /D _WINDOWS /D NDEBUG /D _UNICODE /D UNICODE /D _AFXDLL /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"Release\MFCTest10_15.pch" /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ControlView.cpp
+         ControlView.cpp
+     1>ControlView.cpp(350): warning C4101: “min”: 未引用的局部变量
+     1>ControlView.cpp(350): warning C4101: “max”: 未引用的局部变量
+     1>ControlView.cpp(461): warning C4018: “<”: 有符号/无符号不匹配
+     1>ControlView.cpp(489): warning C4101: “min”: 未引用的局部变量
+     1>ControlView.cpp(488): warning C4101: “k”: 未引用的局部变量
+     1>ControlView.cpp(489): warning C4101: “max”: 未引用的局部变量
+     1>ControlView.cpp(937): warning C4482: 使用了非标准扩展: 限定名中使用了枚举“EPylonGrabStatus”
+     1>ControlView.cpp(976): warning C4482: 使用了非标准扩展: 限定名中使用了枚举“EPylonGrabStatus”
+       ResourceCompile:
+         所有输出均为最新。
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\app\MFCTest10_15 - 16 2k-好\Release\MFCTest10_15.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"D:\app\14400-3.6.5.33_SOFTWARE_Go2_SDK\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32\debug" /LIBPATH:"C:\Program Files\Basler\pylon 4\pylonc\lib\Win32" /LIBPATH:"C:\Program Files\Basler\pylon 4\pylon\lib\Win32" /LIBPATH:"C:\Program Files\Basler\pylon 4\genicam\library\CPP\Lib\Win32_i86" go2.lib glut32.lib Opengl32.lib Glu32.lib PylonC_MD_vc100.lib /MANIFEST /ManifestFile:"Release\MFCTest10_15.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"D:\app\MFCTest10_15 - 16 2k-好\Release\MFCTest10_15.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /ENTRY:"wWinMainCRTStartup" /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\app\MFCTest10_15 - 16 2k-好\Release\MFCTest10_15.lib" /MACHINE:X86 Release\MFCTest10_15.res
+         Release\Camera.obj
+         Release\ContrlDlg.obj
+         Release\ControlView.obj
+         Release\CubicSplineInterpolation.obj
+         Release\DataProcess.obj
+         Release\Device.obj
+         Release\ExternFile.obj
+         Release\MainFrm.obj
+         Release\MFCTest10_15.obj
+         Release\MFCTest10_15Doc.obj
+         Release\MFCTest10_15View.obj
+         Release\MyButton.obj
+         Release\NormalSimplify.obj
+         Release\POINT3.obj
+         Release\stdafx.obj
+         Release\Texture.obj
+         Release\Triangles.obj
+         正在生成代码
+         已完成代码的生成
+         MFCTest10_15.vcxproj -> D:\app\MFCTest10_15 - 16 2k-好\Release\MFCTest10_15.exe
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"D:\app\MFCTest10_15 - 16 2k-好\Release\MFCTest10_15.exe;#1" /manifest Release\MFCTest10_15.exe.intermediate.manifest "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\Include\Manifest\dpiaware.manifest"
+       FinalizeBuildStatus:
+         正在删除文件“Release\MFCTest10_15.unsuccessfulbuild”。
+         正在对“Release\MFCTest10_15.lastbuildstate”执行 Touch 任务。
+     1>已完成生成项目“D:\app\MFCTest10_15 - 16 2k-好\MFCTest10_15.vcxproj”(build 个目标)的操作。
+
+生成成功。
+
+已用时间 00:00:23.02
