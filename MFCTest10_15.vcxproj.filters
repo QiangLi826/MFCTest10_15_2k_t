@@ -69,6 +69,12 @@
     <ClCompile Include="scanCONTROL2900\InterfaceLLT_2.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="algorithm\IRI.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="algorithm\SMTD.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ControlView.h">
@@ -144,6 +150,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="scanCONTROL2900\scanControlDataTypes.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="algorithm\SMTD.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="algorithm\IRI.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

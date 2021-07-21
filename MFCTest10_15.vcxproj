@@ -75,7 +75,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(ProjectDir);D:\work\dependency\include;D:\work\14400-3.6.5.33_SOFTWARE_Go2_SDK\include;D:\work\appending\glaux\include;$(PYLON_DEV_DIR)\include;D:\app\14400-3.6.5.33_SOFTWARE_Go2_SDK\14400-3.6.5.33_SOFTWARE_Go2_SDK\include;$(PYLON_ROOT)\include;$(PYLON_GENICAM_ROOT)\library\CPP\include;$(PYLONC_ROOT)\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\work\20210624project_roaddetect\thirdlib\eigen-3.2.10;$(ProjectDir);D:\work\dependency\include;D:\work\14400-3.6.5.33_SOFTWARE_Go2_SDK\include;D:\work\appending\glaux\include;$(PYLON_DEV_DIR)\include;D:\app\14400-3.6.5.33_SOFTWARE_Go2_SDK\14400-3.6.5.33_SOFTWARE_Go2_SDK\include;$(PYLON_ROOT)\include;$(PYLON_GENICAM_ROOT)\library\CPP\include;$(PYLONC_ROOT)\include</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <ResourceCompile>
@@ -125,6 +125,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="algorithm\IRI.cpp" />
+    <ClCompile Include="algorithm\SMTD.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ContrlDlg.cpp" />
     <ClCompile Include="ControlView.cpp">
@@ -167,6 +169,8 @@
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="algorithm\IRI.h" />
+    <ClInclude Include="algorithm\SMTD.h" />
     <ClInclude Include="C:\Users\Administrator\Documents\MEDAQLib-4.10.0.31036\MEDAQLib.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="constant.h" />

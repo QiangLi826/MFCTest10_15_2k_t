@@ -819,6 +819,10 @@ UINT processILD2300InfosThread(LPVOID lparam)
 */
 UINT maint (LPVOID lpParamter)
 	{
+	//·Ö¿ªÆô¶¯
+	Sleep(5000);
+
+
 	char *argv[] = {"SensorTest", "ILD2300"};
 	int argc =2;
 

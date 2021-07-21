@@ -35,7 +35,7 @@ vector<unsigned char> m_vucProfileBuffer;
 UINT main_scan(LPVOID lpParamter)
 {
 	//ºÍILD2300·Ö¿ª
-	Sleep(15000);
+	Sleep(25000);
 	
 	vector<unsigned int> vuiInterfaces(MAX_INTERFACE_COUNT);
 	vector<DWORD> vdwResolutions(MAX_RESOULUTIONS);

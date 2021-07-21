@@ -8,6 +8,9 @@
 #include "MFCTest10_15View.h"
 #include "ILD2300/SensorTest.h"
 #include "scanCONTROL2900/GetProfiles_Callback.h"
+#include "algorithm/SMTD.h"
+#include "algorithm/IRI.h"
+
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -91,6 +94,15 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	//调用scanCONTROL2900
 	AfxBeginThread(&main_scan, NULL);
+
+	//调用iri算法
+	main_iri();
+
+	
+	//调用smdt算法
+	main_smdt();
+
+
 	return 0;
 }
 
