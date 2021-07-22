@@ -4,6 +4,11 @@
 
 #pragma once
 
+
+
+#if !defined(AFX_STDAFX_H__850D7EE4_B366_4036_9C0D_1A13D310985E__INCLUDED_)
+#define AFX_STDAFX_H__850D7EE4_B366_4036_9C0D_1A13D310985E__INCLUDED_
+
 #ifndef _SECURE_ATL
 #define _SECURE_ATL 1
 #endif
@@ -59,6 +64,8 @@
 
 
 
+#include <afxsock.h>		// MFC socket extensions
+
 
 
 
@@ -76,5 +83,18 @@
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
 #endif
+
+
+
+#endif // !defined(AFX_STDAFX_H__850D7EE4_B366_4036_9C0D_1A13D310985E__INCLUDED_)
+
+
+
+
+
+
+
+
+
 
 

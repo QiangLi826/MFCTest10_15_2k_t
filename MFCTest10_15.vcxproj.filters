@@ -75,6 +75,12 @@
     <ClCompile Include="algorithm\SMTD.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="MySocket.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SockDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ControlView.h">
@@ -158,6 +164,12 @@
     <ClInclude Include="algorithm\IRI.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="MySocket.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SockDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\MFCTest10_15.ico">
@@ -199,8 +211,5 @@
     <ResourceCompile Include="MFCTest10_15.rc">
       <Filter>资源文件</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="ILD2300\MEDAQLib.lib" />
   </ItemGroup>
 </Project>

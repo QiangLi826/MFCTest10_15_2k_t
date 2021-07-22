@@ -88,7 +88,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalLibraryDirectories>D:\work\MFCTest10_15_2k_t\ILD2300;D:\work\dependency\lib;D:\work\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32;D:\work\appending\glaux\lib;$(PYLON_DEV_DIR)lib\Win32;D:\work\appending\lib;D:\app\14400-3.6.5.33_SOFTWARE_Go2_SDK\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32\debug;$(PYLONC_ROOT)\lib\$(Platform);%(AdditionalLibraryDirectories);$(PYLON_ROOT)\lib\Win32;$(PYLON_GENICAM_ROOT)\library\CPP\Lib\Win32_i86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\work\dependency\lib;D:\work\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32;D:\work\appending\glaux\lib;$(PYLON_DEV_DIR)lib\Win32;D:\work\appending\lib;D:\app\14400-3.6.5.33_SOFTWARE_Go2_SDK\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32\debug;$(PYLONC_ROOT)\lib\$(Platform);%(AdditionalLibraryDirectories);$(PYLON_ROOT)\lib\Win32;$(PYLON_GENICAM_ROOT)\library\CPP\Lib\Win32_i86</AdditionalLibraryDirectories>
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
       <StackCommitSize>1523712</StackCommitSize>
     </Link>
@@ -157,10 +157,12 @@
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="MyButton.cpp" />
+    <ClCompile Include="MySocket.cpp" />
     <ClCompile Include="POINT3.cpp" />
     <ClCompile Include="scanCONTROL2900\DllLoader.cpp" />
     <ClCompile Include="scanCONTROL2900\GetProfiles_Callback.cpp" />
     <ClCompile Include="scanCONTROL2900\InterfaceLLT_2.cpp" />
+    <ClCompile Include="SockDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
@@ -186,6 +188,7 @@
     <ClInclude Include="MFCTest10_15Doc.h" />
     <ClInclude Include="MFCTest10_15View.h" />
     <ClInclude Include="MyButton.h" />
+    <ClInclude Include="MySocket.h" />
     <ClInclude Include="POINT3.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="scanCONTROL2900\C_InterfaceLLT_2.h" />
@@ -194,6 +197,7 @@
     <ClInclude Include="scanCONTROL2900\InterfaceLLT_2.h" />
     <ClInclude Include="scanCONTROL2900\scanControlDataTypes.h" />
     <ClInclude Include="scanCONTROL2900\S_InterfaceLLT_2.h" />
+    <ClInclude Include="SockDlg.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
@@ -213,9 +217,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MFCTest10_15.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="ILD2300\MEDAQLib.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

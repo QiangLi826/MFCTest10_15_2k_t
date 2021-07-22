@@ -22,6 +22,7 @@ BEGIN_MESSAGE_MAP(CMFCTest10_15App, CWinApp)
 	ON_COMMAND(ID_FILE_OPEN, &CWinApp::OnFileOpen)
 	// 标准打印设置命令
 	ON_COMMAND(ID_FILE_PRINT_SETUP, &CWinApp::OnFilePrintSetup)
+	ON_COMMAND(ID_APP_ACCELERATION, &CMFCTest10_15App::OnAppAcceleration)
 END_MESSAGE_MAP()
 
 
@@ -140,11 +141,12 @@ BEGIN_MESSAGE_MAP(CAboutDlg, CDialog)
 //	ON_WM_LBUTTONDOWN()
 END_MESSAGE_MAP()
 
+#include "SockDlg.h"
 // 用于运行对话框的应用程序命令
 void CMFCTest10_15App::OnAppAbout()
 {
 	CAboutDlg aboutDlg;
-	aboutDlg.DoModal();
+	aboutDlg.DoModal();	
 }
 
 
@@ -155,4 +157,11 @@ int CMFCTest10_15App::ExitInstance()
 	// TODO: 在此添加专用代码和/或调用基类
 	/*skinppExitSkin();*/
 	return CWinApp::ExitInstance();
+}
+
+
+void CMFCTest10_15App::OnAppAcceleration()
+{
+	CSockDlg dlg;
+	dlg.DoModal();
 }

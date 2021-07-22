@@ -27,6 +27,7 @@ public:
 	afx_msg void OnAppAbout();
 	DECLARE_MESSAGE_MAP()
 	virtual int ExitInstance();
+	afx_msg void OnAppAcceleration();
 };
 
 extern CMFCTest10_15App theApp;
