@@ -162,6 +162,12 @@
     <ClCompile Include="scanCONTROL2900\DllLoader.cpp" />
     <ClCompile Include="scanCONTROL2900\GetProfiles_Callback.cpp" />
     <ClCompile Include="scanCONTROL2900\InterfaceLLT_2.cpp" />
+    <ClCompile Include="serial\CnCommDlg.cpp" />
+    <ClCompile Include="serial\CnHyperlink.cpp" />
+    <ClCompile Include="serial\DcbDlg.cpp" />
+    <ClCompile Include="serial\PropertiesDlg.cpp" />
+    <ClCompile Include="serial\SerialDlg.cpp" />
+    <ClCompile Include="serial\TimeoutsDlg.cpp" />
     <ClCompile Include="SockDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -197,6 +203,14 @@
     <ClInclude Include="scanCONTROL2900\InterfaceLLT_2.h" />
     <ClInclude Include="scanCONTROL2900\scanControlDataTypes.h" />
     <ClInclude Include="scanCONTROL2900\S_InterfaceLLT_2.h" />
+    <ClInclude Include="serial\CnComm.h" />
+    <ClInclude Include="serial\CnCommDlg.h" />
+    <ClInclude Include="serial\CnHyperlink.h" />
+    <ClInclude Include="serial\DcbDlg.h" />
+    <ClInclude Include="serial\MemDC.h" />
+    <ClInclude Include="serial\PropertiesDlg.h" />
+    <ClInclude Include="serial\SerialDlg.h" />
+    <ClInclude Include="serial\TimeoutsDlg.h" />
     <ClInclude Include="SockDlg.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Texture.h" />
@@ -206,6 +220,8 @@
     <None Include="res\BACK_GROUND.bmp" />
     <None Include="res\bg.bmp" />
     <None Include="res\bitmap1.bmp" />
+    <None Include="res\LedOff.ico" />
+    <None Include="res\LedOn.ico" />
     <None Include="res\MFCTest10_15.ico" />
     <None Include="res\MFCTest10_15.rc2" />
     <None Include="res\MFCTest10_15Doc.ico" />

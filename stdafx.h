@@ -84,6 +84,9 @@
 #endif
 #endif
 
+#define CN_COMM_MFC_EXCEPTION
+
+
 
 
 #endif // !defined(AFX_STDAFX_H__850D7EE4_B366_4036_9C0D_1A13D310985E__INCLUDED_)

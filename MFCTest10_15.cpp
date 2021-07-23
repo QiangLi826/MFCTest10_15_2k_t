@@ -7,6 +7,7 @@
 
 #include "MFCTest10_15Doc.h"
 #include "MFCTest10_15View.h"
+#include "serial/CnCommDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -23,6 +24,7 @@ BEGIN_MESSAGE_MAP(CMFCTest10_15App, CWinApp)
 	// 标准打印设置命令
 	ON_COMMAND(ID_FILE_PRINT_SETUP, &CWinApp::OnFilePrintSetup)
 	ON_COMMAND(ID_APP_ACCELERATION, &CMFCTest10_15App::OnAppAcceleration)
+	ON_COMMAND(ID_GPS, &CMFCTest10_15App::OnGps)
 END_MESSAGE_MAP()
 
 
@@ -163,5 +165,13 @@ int CMFCTest10_15App::ExitInstance()
 void CMFCTest10_15App::OnAppAcceleration()
 {
 	CSockDlg dlg;
+	dlg.DoModal();
+}
+
+
+void CMFCTest10_15App::OnGps()
+{
+	// TODO: 在此添加命令处理程序代码
+	CnCommDlg dlg;
 	dlg.DoModal();
 }

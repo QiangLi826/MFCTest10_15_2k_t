@@ -81,6 +81,24 @@
     <ClCompile Include="SockDlg.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="serial\CnCommDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="serial\CnHyperlink.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="serial\DcbDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="serial\PropertiesDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="serial\SerialDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="serial\TimeoutsDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ControlView.h">
@@ -170,6 +188,30 @@
     <ClInclude Include="SockDlg.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="serial\CnComm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="serial\CnCommDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="serial\CnHyperlink.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="serial\DcbDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="serial\MemDC.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="serial\PropertiesDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="serial\SerialDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="serial\TimeoutsDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\MFCTest10_15.ico">
@@ -204,6 +246,12 @@
       <Filter>资源文件</Filter>
     </None>
     <None Include="res\road.ico">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="res\LedOn.ico">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="res\LedOff.ico">
       <Filter>资源文件</Filter>
     </None>
   </ItemGroup>
