@@ -45,9 +45,9 @@ class ILD2300_Info
 		}
 };
 
-#define MAX_ILD2300_Info	150000
+#define MAX_ILD2300_Info	100
 uint32_t indexDistance1 = 0;
-std::queue<ILD2300_Info> ILD2300_infos;
+std::queue<std::queue<ILD2300_Info>> ILD2300_infos;
 CCriticalSection criticalSectionILD2300;
 
 
@@ -660,14 +660,10 @@ bool OutputTimeReached (uint32_t sensorInstance)
 void pushILD2300Info(std::queue<ILD2300_Info>& ILD2300_infos_tmp)
 {
 	// 不加锁，数量有一点点不准确没有关系
-	if (ILD2300_infos.size() + ILD2300_infos_tmp.size() < MAX_ILD2300_Info)
+	if (ILD2300_infos.size()< MAX_ILD2300_Info)
 	{
-		criticalSectionILD2300.Lock();
-		for (int i = 0; i < ILD2300_infos_tmp.size(); i++)
-		{
-			ILD2300_infos.push(ILD2300_infos_tmp.front()); //互斥访问当缓存队列
-			ILD2300_infos_tmp.pop();
-		}
+		criticalSectionILD2300.Lock();		
+		ILD2300_infos.push(ILD2300_infos_tmp); //互斥访问当缓存队列	
 		criticalSectionILD2300.Unlock();
 	}
 	else
@@ -789,20 +785,27 @@ bool GetData (uint32_t sensorInstance)
 */
 UINT processILD2300InfosThread(LPVOID lparam)
 {
-	while (1) {
-		std::vector<ILD2300_Info> v_ild2300_info;
+	
+	while (1) {		
 
 		criticalSectionILD2300.Lock();
-		for (int i = 0; i < ILD2300_infos.size(); i++)
+		int size = ILD2300_infos.size();
+		for (int i = 0; i < size; i++)
 		{
 
-			ILD2300_Info tmp = ILD2300_infos.front(); //互斥访问当缓存队列
+			std::queue<ILD2300_Info> tmp = ILD2300_infos.front(); //互斥访问当缓存队列
 			ILD2300_infos.pop();
-			v_ild2300_info.push_back(tmp);
+
+			while(!tmp.empty())
+			{
+				ILD2300_Info info = tmp.front();
+				tmp.pop();
+				delete& info;
+			}
 
 			if (i % 10 == 0)
 			{
-				printf("processILD2300InfosThread process 12");
+				printf("processILD2300InfosThread process 10");
 				break;
 			}
 		}
