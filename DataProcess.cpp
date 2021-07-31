@@ -149,16 +149,20 @@ void DataProcess::mendDataCloud(vector<short> &dataItem)
 
 	this->findHole();
 	map<int,int>::iterator it;
-	if (!hole.empty())
+	if (!(l==-1 && r==-1))
 	{
-		for (it= hole.begin();it!=hole.end();it++)
+		if (!hole.empty())
 		{
+			for (it= hole.begin();it!=hole.end();it++)
+			{
 
-			this->mendPerHole(it->first,it->second);
+				this->mendPerHole(it->first,it->second);
+			}
+			hole.clear();
 		}
-		hole.clear();
-	}
 
+	}
+	
 	dataItem=this->zValue;
 	this->zValue.clear();
 }
