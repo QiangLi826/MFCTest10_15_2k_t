@@ -47,7 +47,7 @@ class ILD2300_Info
 
 #define MAX_ILD2300_Info	100
 uint32_t indexDistance1 = 0;
-std::queue<std::queue<ILD2300_Info>> ILD2300_infos;
+std::queue<std::vector<ILD2300_Info>> ILD2300_infos;
 CCriticalSection criticalSectionILD2300;
 
 
@@ -657,7 +657,7 @@ bool OutputTimeReached (uint32_t sensorInstance)
 /**
 * 向缓冲区队列添加设备传来的数据
 */
-void pushILD2300Info(std::queue<ILD2300_Info>& ILD2300_infos_tmp)
+void pushILD2300Info(std::vector<ILD2300_Info>& ILD2300_infos_tmp)
 {
 	// 不加锁，数量有一点点不准确没有关系
 	if (ILD2300_infos.size()< MAX_ILD2300_Info)
@@ -670,12 +670,9 @@ void pushILD2300Info(std::queue<ILD2300_Info>& ILD2300_infos_tmp)
 	{
 		// 缓存队列满，不再添加数据
 		printf("ILD2300_infos queue is full\r");
-		for (int i = 0; i < ILD2300_infos_tmp.size(); i++)
-		{
-			ILD2300_Info tmp_info = ILD2300_infos_tmp.front();
-			ILD2300_infos_tmp.pop();
-			delete& tmp_info;
-		}
+		
+		ILD2300_infos_tmp.clear();
+		
 	}
 }
 
@@ -738,32 +735,36 @@ bool GetData (uint32_t sensorInstance)
 		if (OutputTimeReached (sensorInstance))
 			{
 			ClearLine();
-			printf ("[%5d/%5d] ", read, avail);
+			//printf ("[%5d/%5d] \n\r", read, avail);
 
-			std::queue<ILD2300_Info> ILD2300_infos_tmp;
+			std::vector<ILD2300_Info> ILD2300_infos_tmp; //或者使用BufSize
+			ILD2300_infos_tmp.reserve(ceil(double(read/valsPerFrame)));
+
 			for (int32_t i = indexDistance1; i < read; i+= valsPerFrame)
 				{
-				ILD2300_Info* tmp_info = new ILD2300_Info();
+				ClearLine();
+				ILD2300_Info tmp_info;
 				if (scaledData[i] == -DBL_MAX) // MEDAQLib default error value
 				{
 					printf("%u (error value)", static_cast<uint32_t>(rawData[i]));
-					tmp_info->rawData = static_cast<uint32_t>(rawData[i]);
-					tmp_info->scaledData = scaledData[i];
+					//tmp_info.rawData = static_cast<uint32_t>(rawData[i]);
+					//tmp_info.scaledData = scaledData[i];
+					continue;
 				}
 				else
 				{
-					printf("%u (%-.3f)", static_cast<uint32_t>(rawData[i]), scaledData[i]);
-					tmp_info->rawData = static_cast<uint32_t>(rawData[i]);
-					tmp_info->scaledData = scaledData[i];				
+					//printf("%u (%-.3f)", static_cast<uint32_t>(rawData[i]), scaledData[i]);
+					tmp_info.rawData = static_cast<uint32_t>(rawData[i]);
+					tmp_info.scaledData = scaledData[i];				
 				}
 
-				printf(", TS %.3f", timestamp);
-				tmp_info->timestamp = timestamp; // TODO: 这个是最老的那个点的时间。暂时每个点都记录下时间。
+				//printf(", TS %.3f", timestamp);
+				tmp_info.timestamp = timestamp; // TODO: 这个是最老的那个点的时间。暂时每个点都记录下时间。
 #if defined (MEAS_FREQUENCY)
-				printf(" @ %.3f Hz", frequency);
-				tmp_info->frequency = frequency; 
+				//printf(" @ %.3f Hz", frequency);
+				tmp_info.frequency = frequency; 
 #endif
-				ILD2300_infos_tmp.push(*tmp_info);
+				ILD2300_infos_tmp.push_back(tmp_info);
 				}
 
 
@@ -790,28 +791,31 @@ UINT processILD2300InfosThread(LPVOID lparam)
 
 		criticalSectionILD2300.Lock();
 		int size = ILD2300_infos.size();
-		for (int i = 0; i < size; i++)
+		
+		printf("ild2300 queue size:%d \n\r", size);
+		if (size > 2)
 		{
-
-			std::queue<ILD2300_Info> tmp = ILD2300_infos.front(); //互斥访问当缓存队列
+			
+			std::vector<ILD2300_Info> tmp1 = ILD2300_infos.front(); 
 			ILD2300_infos.pop();
 
-			while(!tmp.empty())
-			{
-				ILD2300_Info info = tmp.front();
-				tmp.pop();
-				delete& info;
-			}
+			std::vector<ILD2300_Info> tmp2 = ILD2300_infos.front(); 
+			ILD2300_infos.pop();
 
-			if (i % 10 == 0)
-			{
-				printf("processILD2300InfosThread process 10");
-				break;
-			}
+			ILD2300_Info data1 = tmp1[0];
+			int size1 = tmp1.size();
+
+			ILD2300_Info data2 = tmp2[0];
+			int size2 = tmp2.size();
+
+
+			//printf("size1:%d  data1.timestamp %f size2 %d data2.timestamp %f  \n\r", size1, data1.timestamp, size2, data2.timestamp);
+			//printf("address %d %d \r\n", &tmp1, &tmp2);
 		}
+		
 		criticalSectionILD2300.Unlock();
 
-		Sleep(100); // 暂停
+		Sleep(10000); // 暂停
 	}
 
 	return 0;
