@@ -21,12 +21,15 @@
 //#define CHECK_MONOTONY // Enable monotony check for counter values
 #include <queue>
 #include <afxmt.h>
-
+#include "algorithm/IRI.h"
 
 static bool sensorIsMEBUS= false;
 static bool sensorIsMultiSensor= false;
 static bool videoStreamActive= false;
 static int32_t valsPerFrame= 0;
+int g_SubSampleRate = 200; // 采样率是g_SubSampleRate/20 000
+int g_IriMinSize = 2; //每次计算iri需要队列大小 ILD2300_infos
+
 #if defined (CHECK_MONOTONY)
 static int32_t counterIndex= -1;
 #endif
@@ -740,9 +743,10 @@ bool GetData (uint32_t sensorInstance)
 			std::vector<ILD2300_Info> ILD2300_infos_tmp; //或者使用BufSize
 			ILD2300_infos_tmp.reserve(ceil(double(read/valsPerFrame)));
 
-			for (int32_t i = indexDistance1; i < read; i+= valsPerFrame)
+			//每隔g_SubSampleRate个数据采样一次
+			for (int32_t i = indexDistance1; i < read && (i+ valsPerFrame*g_SubSampleRate) < read; i+= (valsPerFrame*g_SubSampleRate))
 				{
-				ClearLine();
+				//ClearLine();
 				ILD2300_Info tmp_info;
 				if (scaledData[i] == -DBL_MAX) // MEDAQLib default error value
 				{
@@ -781,6 +785,24 @@ bool GetData (uint32_t sensorInstance)
 	return true;
 	}
 
+//从缓存队列中提取distances数据
+void getDistances(std::vector<double>* distances)
+{
+
+	for(int i=0; i < g_IriMinSize; i++)
+	{
+		std::vector<ILD2300_Info> tmp_v = ILD2300_infos.front(); 
+		ILD2300_infos.pop();
+
+		int count = tmp_v.size();
+		for (int i = 0; i < count;i++)
+		{
+			distances->push_back(double(tmp_v[i].scaledData/1000)); //mm转换成m
+		}			
+	}
+}
+
+
 /**
 * 异步处理点激光数据
 */
@@ -788,34 +810,36 @@ UINT processILD2300InfosThread(LPVOID lparam)
 {
 	
 	while (1) {		
+		Sleep(200); // 暂停
 
 		criticalSectionILD2300.Lock();
 		int size = ILD2300_infos.size();
 		
-		printf("ild2300 queue size:%d \n\r", size);
-		if (size > 2)
+		//每次计算IRI至少需要使用两个缓存队列
+		if (size < g_IriMinSize)
 		{
-			
-			std::vector<ILD2300_Info> tmp1 = ILD2300_infos.front(); 
-			ILD2300_infos.pop();
-
-			std::vector<ILD2300_Info> tmp2 = ILD2300_infos.front(); 
-			ILD2300_infos.pop();
-
-			ILD2300_Info data1 = tmp1[0];
-			int size1 = tmp1.size();
-
-			ILD2300_Info data2 = tmp2[0];
-			int size2 = tmp2.size();
-
-
-			//printf("size1:%d  data1.timestamp %f size2 %d data2.timestamp %f  \n\r", size1, data1.timestamp, size2, data2.timestamp);
-			//printf("address %d %d \r\n", &tmp1, &tmp2);
+			continue;
 		}
-		
-		criticalSectionILD2300.Unlock();
 
-		Sleep(10000); // 暂停
+		printf("ild2300 queue size %d \n\r", size);
+	
+
+		double v=80.0; //1/4车辆行驶速度（km/h）
+			
+		double vPerSecond = v * 1000 / 3600; // m/s
+			
+		int frequency = 20000; //目前点激光采集频率是20KHz			
+
+
+		double dx= g_SubSampleRate * vPerSecond / frequency; // 采样间隔（m） 这个采样间隔要大于0.25
+			
+		std::vector<double> distances;
+		
+		getDistances(&distances);
+				
+		iri(distances, dx, v);
+			
+		criticalSectionILD2300.Unlock();		
 	}
 
 	return 0;

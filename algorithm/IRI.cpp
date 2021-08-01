@@ -118,15 +118,10 @@ int readFromCsv(vector<double>* incsv)
 }
 
 
-int main_iri()
-{
-	double dx = 0.25;// input('请输入采样间隔dx:');
-	double v = 80;// input('请输入1/4车辆行驶速度v:');
-	
-	vector<double> incsv;
-	readFromCsv(&incsv);
-	
 
+
+int iri(vector<double>& incsv, double dx, double v)
+{
 	Eigen::MatrixXd pr(4, 1);
 	Eigen::MatrixXd st(4, 4);
 	IRI_xishu(dx, v, &pr, &st);
@@ -198,5 +193,20 @@ int main_iri()
 
 	return 0;
 }
+
+int main_iri()
+{
+	double dx = 0.25;// input('请输入采样间隔dx:');
+	double v = 80;// input('请输入1/4车辆行驶速度v:');
+	
+	vector<double> incsv;
+	readFromCsv(&incsv);
+
+	iri(incsv, dx, v);
+
+	return 0;
+}
+
+
 
 
