@@ -8,6 +8,7 @@
 #include "MFCTest10_15Doc.h"
 #include "MFCTest10_15View.h"
 #include "serial/CnCommDlg.h"
+#include "IRIDialog.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -25,6 +26,7 @@ BEGIN_MESSAGE_MAP(CMFCTest10_15App, CWinApp)
 	ON_COMMAND(ID_FILE_PRINT_SETUP, &CWinApp::OnFilePrintSetup)
 	ON_COMMAND(ID_APP_ACCELERATION, &CMFCTest10_15App::OnAppAcceleration)
 	ON_COMMAND(ID_GPS, &CMFCTest10_15App::OnGps)
+	ON_COMMAND(ID_menu_iri, &CMFCTest10_15App::Onmenuiri)
 END_MESSAGE_MAP()
 
 
@@ -175,3 +177,14 @@ void CMFCTest10_15App::OnGps()
 	CnCommDlg dlg;
 	dlg.DoModal();
 }
+
+
+void CMFCTest10_15App::Onmenuiri()
+{
+	IRIDialog dlg;
+	dlg.DoModal();
+}
+
+
+
+

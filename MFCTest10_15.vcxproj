@@ -140,6 +140,7 @@
     </ClCompile>
     <ClCompile Include="ExternFile.cpp" />
     <ClCompile Include="ILD2300\SensorTest.cpp" />
+    <ClCompile Include="IRIDialog.cpp" />
     <ClCompile Include="MainFrm.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
@@ -189,6 +190,7 @@
     <ClInclude Include="Device.h" />
     <ClInclude Include="ILD2300\MEDAQLib.h" />
     <ClInclude Include="ILD2300\SensorTest.h" />
+    <ClInclude Include="IRIDialog.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="MFCTest10_15.h" />
     <ClInclude Include="MFCTest10_15Doc.h" />

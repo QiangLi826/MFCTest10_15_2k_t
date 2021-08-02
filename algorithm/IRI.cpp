@@ -120,8 +120,8 @@ int readFromCsv(vector<double>* incsv)
 
 
 
-int iri(vector<double>& incsv, double dx, double v)
-{
+int iri(vector<double>& incsv, double dx, double v, double * IRI_length, double* IRI_result )
+{													 
 	Eigen::MatrixXd pr(4, 1);
 	Eigen::MatrixXd st(4, 4);
 	IRI_xishu(dx, v, &pr, &st);
@@ -185,11 +185,8 @@ int iri(vector<double>& incsv, double dx, double v)
 
 	}
 
-	double IRI_length = (incsv.size() - 2) * dx;
-	double IRI_result = rs / kk * 1000;
-
-	std::cout << "IRI_length:" << IRI_length << " IRI_result:" << IRI_result << endl;
-
+	*IRI_length = (incsv.size() - 2) * dx;
+	*IRI_result = rs / kk * 1000;
 
 	return 0;
 }
@@ -202,8 +199,12 @@ int main_iri()
 	vector<double> incsv;
 	readFromCsv(&incsv);
 
-	iri(incsv, dx, v);
+	double IRI_length = 0;
+	double IRI_result = 0;
+	iri(incsv, dx, v, &IRI_length, &IRI_result);
 
+	
+	std::cout << "IRI_length:" << IRI_length << " IRI_result:" << IRI_result << endl;
 	return 0;
 }
 

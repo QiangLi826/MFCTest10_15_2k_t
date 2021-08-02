@@ -29,6 +29,7 @@ public:
 	virtual int ExitInstance();
 	afx_msg void OnAppAcceleration();
 	afx_msg void OnGps();
+	afx_msg void Onmenuiri();
 };
 
 extern CMFCTest10_15App theApp;

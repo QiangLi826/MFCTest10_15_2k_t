@@ -856,10 +856,9 @@ UINT processILD2300InfosThread(LPVOID lparam)
 
 	while (1) {		
 		Sleep(1000); // ÔÝÍ£
-
+		
 		criticalSectionILD2300.Lock();
 		int size = ILD2300_infos.size();
-		
 			
 		if (!isDataEnough(dataNumLimit)){
 			criticalSectionILD2300.Unlock();
@@ -869,14 +868,26 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		std::vector<double> distances;
 		
 		getDistances(&distances, dataNumLimit);
+		criticalSectionILD2300.Unlock();
+
+
+
 
 		printf("ild2300 queue size %d,  vPerSecond:(%-.3f) dx: (%-.3f)  distances.size: %d dataNumLimit:%d \n\r"
 			, size, vPerSecond, dx,distances.size(), dataNumLimit);
 		
-		iri(distances, dx, v);
-			
-		criticalSectionILD2300.Unlock();		
+
+		double IRI_length = 0;
+		double IRI_result = 0;
+		iri(distances, dx, v, &IRI_length, &IRI_result);
+
+		printf("ild2300 queue size %d,  vPerSecond:(%-.3f) dx: (%-.3f)  distances.size: %d dataNumLimit:%d \n\r"
+			, size, vPerSecond, dx,distances.size(), dataNumLimit);
+		
+		printf("IRI_length:%-.3f IRI_result:%-.3f", IRI_length, IRI_result);		
+
 	}
+
 
 	return 0;
 }
