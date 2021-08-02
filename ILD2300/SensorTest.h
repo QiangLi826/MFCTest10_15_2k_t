@@ -1,1 +1,1 @@
-UINT maint (LPVOID lpParamter);
+UINT enter_ild2300 (LPVOID lpParamter);

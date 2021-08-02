@@ -90,17 +90,17 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//char *argv[] = {"SensorTest", "ILD2300"};
 	//maint(2, argv);
 
-	AfxBeginThread(&maint, NULL);
+	AfxBeginThread(&enter_ild2300, NULL);
 
 	//调用scanCONTROL2900
-	AfxBeginThread(&main_scan, NULL);
+	//AfxBeginThread(&main_scan, NULL);
 
 	//调用iri算法
-	main_iri();
+	//main_iri();
 
 	
 	//调用smdt算法
-	main_smdt();
+	//main_smdt();
 
 
 	return 0;
