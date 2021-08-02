@@ -886,6 +886,8 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		
 		printf("IRI_length:%-.3f IRI_result:%-.3f", IRI_length, IRI_result);		
 
+
+
 	}
 
 
