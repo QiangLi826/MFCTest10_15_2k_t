@@ -23,6 +23,7 @@
 #include <vector>
 #include <afxmt.h>
 #include "algorithm/IRI.h"
+#include "SensorTest.h"
 
 static bool sensorIsMEBUS= false;
 static bool sensorIsMultiSensor= false;
@@ -51,7 +52,37 @@ class ILD2300_Info
 		}
 };
 
+
+
+IRI_Info::IRI_Info() 
+{	}
+	
+IRI_Info::~IRI_Info() 
+{	}
+
+CString IRI_Info::toString()
+{
+	CString tmp;
+	CString output;
+	tmp.Format(_T("IRI %-.3f"), IRI_result); 
+	output += tmp;
+	tmp.Format(_T("，统计长度: %-.3f m"), IRI_length); 
+	output += tmp;
+	tmp.Format(_T("，统计统计间隔: %-.3f m"), dx); 
+	output += tmp;
+	tmp.Format(_T("，车速: %-.3f km/h"), v); 
+	output += tmp;
+	return output;
+};
+
+std::deque<IRI_Info> IRI_infos;
+CCriticalSection criticalSectionIRI;
+
+
+
 #define MAX_ILD2300_Info	200
+
+//distance在返回数据结构中的索引
 uint32_t indexDistance1 = 0;
 std::deque<std::vector<ILD2300_Info>> ILD2300_infos;
 CCriticalSection criticalSectionILD2300;
@@ -852,7 +883,7 @@ UINT processILD2300InfosThread(LPVOID lparam)
 	}
 
 	dx = g_SubSampleRate * vPerSecond / frequency;
-		
+	
 
 	while (1) {		
 		Sleep(1000); // 暂停
@@ -877,8 +908,8 @@ UINT processILD2300InfosThread(LPVOID lparam)
 			, size, vPerSecond, dx,distances.size(), dataNumLimit);
 		
 
-		double IRI_length = 0;
-		double IRI_result = 0;
+		double IRI_length = 0.0;
+		double IRI_result = 0.0;
 		iri(distances, dx, v, &IRI_length, &IRI_result);
 
 		printf("ild2300 queue size %d,  vPerSecond:(%-.3f) dx: (%-.3f)  distances.size: %d dataNumLimit:%d \n\r"
@@ -888,6 +919,20 @@ UINT processILD2300InfosThread(LPVOID lparam)
 
 
 
+
+		IRI_Info iriInfo;
+		iriInfo.dx = dx;
+		iriInfo.IRI_length = IRI_length;
+		iriInfo.IRI_result = IRI_result;
+		iriInfo.v = v;
+
+		criticalSectionIRI.Lock();
+		if (IRI_infos.size() >= 10)
+		{
+			IRI_infos.pop_front();
+		}
+		IRI_infos.push_back(iriInfo);
+		criticalSectionIRI.Unlock();
 	}
 
 

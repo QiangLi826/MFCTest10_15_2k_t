@@ -5,6 +5,12 @@
 #include "MFCTest10_15.h"
 #include "IRIDialog.h"
 #include "afxdialogex.h"
+#include "ILD2300/SensorTest.h"
+
+#include <deque>
+extern std::deque<IRI_Info> IRI_infos;
+extern CCriticalSection criticalSectionIRI;
+
 
 
 // IRIDialog ¶Ô»°¿ò
@@ -40,11 +46,23 @@ END_MESSAGE_MAP()
 
  UINT IRIDialog::showIriData(LPVOID lpParamter)
 {
-	if (edit_iri.GetLength()>100)
+	if (edit_iri.GetLength()>1000)
 	{
 		edit_iri = '\0';
 	}
-	edit_iri +=  "test sdfsdf sdfsdff sdfsd sdfsdff sdf\r\n";
+
+	criticalSectionIRI.Lock();
+	int size = IRI_infos.size();
+	for (int i = 0 ; i< size ; i++)
+	{
+		IRI_Info iriInfo = IRI_infos.front();
+		edit_iri += iriInfo.toString();
+		edit_iri += "\r\n";
+		IRI_infos.pop_front();
+	}
+	
+	criticalSectionIRI.Unlock();
+
 	UpdateData(FALSE);
 	UpdateWindow();
 
