@@ -46,7 +46,7 @@ END_MESSAGE_MAP()
 
  UINT IRIDialog::showIriData(LPVOID lpParamter)
 {
-	if (edit_iri.GetLength()>1000)
+	if (edit_iri.GetLength()>10000)
 	{
 		edit_iri = '\0';
 	}

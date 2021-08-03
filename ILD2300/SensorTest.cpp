@@ -923,16 +923,15 @@ UINT processILD2300InfosThread(LPVOID lparam)
 			
 	double vPerSecond = v * 1000 / 3600; // m/s
 			
-	int frequency = 20000; //目前点激光采集频率是20KHz		
-
-	//计算iri需要最少的数据量 10m / vPerSecond * frequency / g_SubSampleRate
-	int dataNumLimit  = g_IRIMinLength * frequency / g_SubSampleRate / vPerSecond ; 
-
+	int frequency = 20000; //目前点激光采集频率是20KHz
 	
 	double dx = g_RIRMinDX;
 	
 	//根据采样间隔调整采样频率。
 	g_SubSampleRate = ceil(g_RIRMinDX * frequency / vPerSecond);
+
+	//计算iri需要最少的数据量 10m / vPerSecond * frequency / g_SubSampleRate
+	int dataNumLimit  = g_IRIMinLength * frequency / g_SubSampleRate / vPerSecond ; 
 
 
 	while (1) {		
