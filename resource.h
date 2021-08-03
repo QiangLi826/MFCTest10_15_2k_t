@@ -3,11 +3,11 @@
 // Used by MFCTest10_15.rc
 //
 #define IDD_ABOUTBOX                    100
-#define IDP_OLE_INIT_FAILED             100
+#define IDP_OLE_INIT_FAILED             101
 #define IDD_SOCK_DIALOG                 102
-#define IDD_DIALOG_IRI                  102
+#define IDD_DIALOG_IRI                  104
 #define IDD_CONTROLVIEW                 103
-#define IDP_SOCKETS_INIT_FAILED         103
+#define IDP_SOCKETS_INIT_FAILED         105
 #define IDR_MAINFRAME                   128
 #define IDR_MFCTest10_15TYPE            129
 #define IDD_CONTRLDLG                   131
@@ -210,6 +210,6 @@
 #define _APS_NEXT_RESOURCE_VALUE        157
 #define _APS_NEXT_COMMAND_VALUE         32777
 #define _APS_NEXT_CONTROL_VALUE         1402
-#define _APS_NEXT_SYMED_VALUE           105
+#define _APS_NEXT_SYMED_VALUE           106
 #endif
 #endif
