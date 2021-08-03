@@ -5,10 +5,12 @@ class IRI_Info
 {
 	public:
 		IRI_Info() ;
-		double IRI_length; 
-		double IRI_result; 
+		double IRI_length;  //IRI统计长度
+		double IRI_result;  //IRI值
 		double dx;
 		double v;
+		double IRI_result_100m_average;
+		double IRI_result_320m_average;
 		~IRI_Info();
 		CString toString();		
 };

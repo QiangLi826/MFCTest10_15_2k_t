@@ -30,9 +30,8 @@ static bool sensorIsMultiSensor= false;
 static bool videoStreamActive= false;
 static int32_t valsPerFrame= 0;
 int g_SubSampleRate = 200; // 采样率是g_SubSampleRate/20 000
-int g_IRIMinSize = 2; //每次计算iri需要队列大小 ILD2300_infos
-int g_IRIMinLength = 30; //每次计算iri需要的最小里程
-double g_RIRMinDX=0.25; //采样间隔dx
+int g_IRIMinLength = 10; //每次计算iri需要的最小里程,单位m
+double g_RIRMinDX=0.1; //采样间隔dx 单位m
 
 #if defined (CHECK_MONOTONY)
 static int32_t counterIndex= -1;
@@ -64,7 +63,7 @@ CString IRI_Info::toString()
 {
 	CString tmp;
 	CString output;
-	tmp.Format(_T("IRI %-.3f"), IRI_result); 
+	tmp.Format(_T("IRI %-.3f m/km"), IRI_result); 
 	output += tmp;
 	tmp.Format(_T("，统计长度: %-.3f m"), IRI_length); 
 	output += tmp;
@@ -72,16 +71,32 @@ CString IRI_Info::toString()
 	output += tmp;
 	tmp.Format(_T("，车速: %-.3f km/h"), v); 
 	output += tmp;
+
+	if (IRI_result_100m_average > 0.0)
+	{
+		tmp.Format(_T("，100m平均IRI: %-.3f m/km"), IRI_result_100m_average); 
+		output += tmp;
+	}
+
+	if (IRI_result_320m_average > 0.0)
+	{
+		tmp.Format(_T("，320m平均IRI: %-.3f m/km"), IRI_result_320m_average); 
+		output += tmp;
+	}
 	return output;
 };
+
 
 std::deque<IRI_Info> IRI_infos;
 CCriticalSection criticalSectionIRI;
 
 
+#define MAX_IRI_RAW_Info	100
+std::deque<IRI_Info> IRI_infosRaw;
+
+
 
 #define MAX_ILD2300_Info	200
-
 //distance在返回数据结构中的索引
 uint32_t indexDistance1 = 0;
 std::deque<std::vector<ILD2300_Info>> ILD2300_infos;
@@ -835,16 +850,12 @@ void getDistances(std::vector<double>* distances, int limit)
 			distances->push_back(double(tmp_v[i].scaledData/1000)); //mm转换成m
 		}
 
-		if (distances->size() >= limit){
-			// 剩余队列过多继续
-			if (size - i > 20)
-			{
-				continue;
-			}
+		if (distances->size() >= limit){			
 			break;
 		}
 	}
 }
+
 
 //判断计算iri的源数据是否充足
 boolean isDataEnough(int limit)
@@ -860,33 +871,72 @@ boolean isDataEnough(int limit)
 	return false;
 }
 
+//拼装IRI展示信息。
+void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_result, double v)
+{
+	iriInfo.dx = dx;
+	iriInfo.IRI_length = IRI_length;
+	iriInfo.IRI_result = IRI_result;
+	iriInfo.v = v;
+	iriInfo.IRI_result_100m_average = 0.0;
+	iriInfo.IRI_result_320m_average = 0.0;
+
+	if (IRI_infosRaw.size() >= MAX_IRI_RAW_Info)
+	{
+		IRI_infosRaw.pop_front();
+	}
+	IRI_infosRaw.push_back(iriInfo);
+
+
+	double IRI_length_total = 0.0;
+	double IRI_result_total = 0.0;
+	int count = 0;
+	for (int i = IRI_infosRaw.size() - 1; i >= 0; i--)
+	{
+		count += 1;
+		IRI_Info temp = IRI_infosRaw.at(i);
+		IRI_length_total += temp.IRI_length;
+		IRI_result_total += temp.IRI_result;
+
+		// 统计长度大于100米（可以有误差）
+		if (iriInfo.IRI_result_100m_average <= 0.0 && IRI_length_total >= 100 * 0.98)
+		{
+			iriInfo.IRI_result_100m_average = IRI_result_total / count;
+		}
+
+		// 统计长度大于320米（可以有误差）
+		if (iriInfo.IRI_result_320m_average <= 0.0 && IRI_length_total >= 320 * 0.98)
+		{
+			iriInfo.IRI_result_320m_average = IRI_result_total / count;
+			break;
+		}
+	}
+}
+
 
 /**
 * 异步处理点激光数据
 */
 UINT processILD2300InfosThread(LPVOID lparam)
 {
-	double v=80.0; //1/4车辆行驶速度（km/h）
+	double v = 80.0; //1/4车辆行驶速度（km/h）
 			
 	double vPerSecond = v * 1000 / 3600; // m/s
 			
 	int frequency = 20000; //目前点激光采集频率是20KHz		
 
-	//计算iri需要最少的数据量 30m / vPerSecond * frequency / g_SubSampleRate
+	//计算iri需要最少的数据量 10m / vPerSecond * frequency / g_SubSampleRate
 	int dataNumLimit  = g_IRIMinLength * frequency / g_SubSampleRate / vPerSecond ; 
 
-	double dx = g_SubSampleRate * vPerSecond / frequency; // 采样间隔（m） 这个采样间隔要大于0.25
-	if(dx < g_RIRMinDX)
-	{
-		//根据采样间隔调整采样频率。
-		g_SubSampleRate = ceil(g_RIRMinDX * frequency / vPerSecond);
-	}
-
-	dx = g_SubSampleRate * vPerSecond / frequency;
 	
+	double dx = g_RIRMinDX;
+	
+	//根据采样间隔调整采样频率。
+	g_SubSampleRate = ceil(g_RIRMinDX * frequency / vPerSecond);
+
 
 	while (1) {		
-		Sleep(1000); // 暂停
+		Sleep(300); // 暂停
 		
 		criticalSectionILD2300.Lock();
 		int size = ILD2300_infos.size();
@@ -916,15 +966,12 @@ UINT processILD2300InfosThread(LPVOID lparam)
 			, size, vPerSecond, dx,distances.size(), dataNumLimit);
 		
 		printf("IRI_length:%-.3f IRI_result:%-.3f", IRI_length, IRI_result);		
-
-
+		
 
 
 		IRI_Info iriInfo;
-		iriInfo.dx = dx;
-		iriInfo.IRI_length = IRI_length;
-		iriInfo.IRI_result = IRI_result;
-		iriInfo.v = v;
+		getIRIInfo(iriInfo, dx, IRI_length, IRI_result, v);
+
 
 		criticalSectionIRI.Lock();
 		if (IRI_infos.size() >= 10)
