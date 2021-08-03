@@ -16,6 +16,7 @@ public:
 // 对话框数据
 	enum { IDD = IDD_DIALOG_IRI };	
 	CString edit_iri;
+	CEdit   m_edit;
 	UINT IRIDialog::showIriData(LPVOID lpParamter);
 
 protected:

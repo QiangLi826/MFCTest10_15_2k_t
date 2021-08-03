@@ -32,6 +32,7 @@ void IRIDialog::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Text(pDX, IDC_EDIT_IRI, edit_iri);
+	DDX_Control(pDX, IDC_EDIT_IRI, m_edit);
 	
 }
 
@@ -66,6 +67,8 @@ END_MESSAGE_MAP()
 	UpdateData(FALSE);
 	UpdateWindow();
 
+	
+	m_edit.LineScroll(m_edit.GetLineCount()-1,0);
 	return 0;
 }
 
