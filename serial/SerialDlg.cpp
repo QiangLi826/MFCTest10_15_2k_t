@@ -7,6 +7,8 @@
 #include "DcbDlg.h"
 #include "TimeoutsDlg.h"
 #include "PropertiesDlg.h"
+#include "GPS_Info.h"
+#include <cmath>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -18,6 +20,14 @@ static char THIS_FILE[] = __FILE__;
 // SerialDlg dialog
 int Ascii2Hex(char* ascii, char* hex);
 int Hex2Ascii(char* hex, char* ascii);
+
+CString g_lastGpsStr='\0';    //上一个
+CString g_currentGpsStr='\0'; //当前的。
+CCriticalSection criticalSectionGPSStr;
+
+//false为零， true为1。有些误差没有关系。不用加锁。
+boolean g_isGPSOpen = false;
+
 
 SerialDlg::SerialDlg(int iInstance, CWnd* pParent /*=NULL*/)
 : CDialog(SerialDlg::IDD, pParent), iInstance_(iInstance)
@@ -144,6 +154,7 @@ BEGIN_MESSAGE_MAP(SerialDlg, CDialog)
 	ON_EN_CHANGE(IDC_EDIT_CYCLE, OnChangeEditCycle)
 	ON_BN_CLICKED(IDC_CHECK_SAVE, OnCheckSave)
 	//}}AFX_MSG_MAP
+	
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -247,8 +258,25 @@ LRESULT SerialDlg::OnReceive(WPARAM wParam, LPARAM lParam)
 					Ascii2Hex(buffer, hex_buffer);
 					m_sRx += hex_buffer;
 				}
-				else
+				else{
 					m_sRx += buffer;
+
+					criticalSectionGPSStr.Lock();
+					g_lastGpsStr = g_currentGpsStr;
+					g_currentGpsStr = buffer;
+					criticalSectionGPSStr.Unlock();
+
+					GPS_Info currentGps(g_currentGpsStr);
+					GPS_Info lastGps(g_lastGpsStr);
+					
+					double distance =  sqrtf((lastGps.x - currentGps.x) * (lastGps.x - currentGps.x) +
+						(lastGps.y - currentGps.y) * (lastGps.y - currentGps.y)
+						+ (lastGps.z - currentGps.z) * (lastGps.z - currentGps.z));
+
+					double time = currentGps.time >= 
+						lastGps.time ? (currentGps.time - lastGps.time) : (currentGps.time + 5184000 - lastGps.time);
+					double v = distance/time;
+				}
 			}
 
 			if (m_bAutoSave)
@@ -360,6 +388,8 @@ void SerialDlg::OnButtonOpen()
 			
 			for (int i = 0; i<sizeof(item_id)/sizeof(WORD); i++) 
 				GetDlgItem(item_id[i])->EnableWindow(!GetDlgItem(item_id[i])->IsWindowEnabled());
+
+			g_isGPSOpen = true;
 		}
 
 		SetState(); 
@@ -373,6 +403,8 @@ void SerialDlg::OnButtonOpen()
 		
 		for (int i = 0; i<sizeof(item_id)/sizeof(WORD); i++) 
 			GetDlgItem(item_id[i])->EnableWindow(!GetDlgItem(item_id[i])->IsWindowEnabled());
+
+		g_isGPSOpen = false;
 	}
 	
 	

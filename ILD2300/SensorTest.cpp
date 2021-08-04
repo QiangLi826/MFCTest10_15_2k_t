@@ -24,6 +24,7 @@
 #include <afxmt.h>
 #include "algorithm/IRI.h"
 #include "SensorTest.h"
+#include "GPS_Info.h"
 
 static bool sensorIsMEBUS= false;
 static bool sensorIsMultiSensor= false;
@@ -48,6 +49,19 @@ class ILD2300_Info
 		double timestamp;
 		double frequency;
 		~ILD2300_Info() {
+		}
+};
+
+class ILD2300_Infos_Buffer
+{
+
+	public:
+		ILD2300_Infos_Buffer() {
+		}
+		std::vector<ILD2300_Info> infos_v;
+		double distance;
+		double v;	
+		~ILD2300_Infos_Buffer() {
 		}
 };
 
@@ -96,11 +110,20 @@ std::deque<IRI_Info> IRI_infosRaw;
 
 
 
-#define MAX_ILD2300_Info	200
+#define MAX_ILD2300_Infos_Buffer	200
 //distance在返回数据结构中的索引
 uint32_t indexDistance1 = 0;
-std::deque<std::vector<ILD2300_Info>> ILD2300_infos;
+std::deque<ILD2300_Infos_Buffer> g_ILD2300_infos_buffer;
 CCriticalSection criticalSectionILD2300;
+
+
+
+extern CString g_lastGpsStr;
+extern CString g_currentGpsStr;
+extern CCriticalSection criticalSectionGPSStr;
+extern boolean g_isGPSOpen;
+#define INVALID_VALUE	-1
+
 
 
 /** Helper function to set cursor at start of current line in console.
@@ -709,24 +732,44 @@ bool OutputTimeReached (uint32_t sensorInstance)
 /**
 * 向缓冲区队列添加设备传来的数据
 */
-void pushILD2300Info(std::vector<ILD2300_Info>& ILD2300_infos_tmp)
+void pushILD2300Info(ILD2300_Infos_Buffer& infos_buffer)
 {
 	// 不加锁，数量有一点点不准确没有关系
-	if (ILD2300_infos.size()< MAX_ILD2300_Info)
+	if (g_ILD2300_infos_buffer.size() < MAX_ILD2300_Infos_Buffer)
 	{
 		criticalSectionILD2300.Lock();	
 		//printf("pushILD2300Info \n\r");
-		ILD2300_infos.push_back(ILD2300_infos_tmp); //互斥访问当缓存队列	
+		g_ILD2300_infos_buffer.push_back(infos_buffer); //互斥访问当缓存队列	
 		criticalSectionILD2300.Unlock();
 	}
 	else
 	{
 		// 缓存队列满，不再添加数据
-		printf("ILD2300_infos queue is full\r");
-		
-		ILD2300_infos_tmp.clear();
-		
+		printf("g_ILD2300_infos_buffer queue is full\r");		
+		infos_buffer.infos_v.clear();		
 	}
+}
+
+
+//计算速度和距离 By GPS
+void getVelocityByGPS(CString& oldGpsStr, double& distance, double& v)
+{
+	//gps没有打开
+	if (!g_isGPSOpen)
+	{
+		distance = INVALID_VALUE;
+		v = INVALID_VALUE;
+		return;
+	}
+
+	CString newGpsStr;
+	criticalSectionGPSStr.Lock();
+	newGpsStr += g_currentGpsStr;
+	criticalSectionGPSStr.Unlock();
+	GPS_Info currentGps(newGpsStr);
+	GPS_Info lastGps(oldGpsStr);
+	GPS_Info::getDistance(distance, lastGps, currentGps);
+	GPS_Info::getVelocity(v, distance, lastGps, currentGps);
 }
 
 /** Read continuous data from sensor and show each first frame at console
@@ -746,8 +789,16 @@ bool GetData (uint32_t sensorInstance)
 		if (scaledData) { delete []scaledData; scaledData= nullptr;	}
 		printf ("GetData: Could not allocate buffer\n");
 		}
+
+
 	while (1)
 		{
+		CString oldGpsStr;		
+		criticalSectionGPSStr.Lock();
+		oldGpsStr += g_currentGpsStr;
+		criticalSectionGPSStr.Unlock();
+
+
 		if (sensorIsMEBUS)
 			{
 			if (sensorIsMultiSensor)
@@ -790,7 +841,9 @@ bool GetData (uint32_t sensorInstance)
 			//ClearLine();
 			//printf ("[%5d/%5d] \n\r", read, avail);
 
-			std::vector<ILD2300_Info> ILD2300_infos_tmp; //或者使用BufSize
+			ILD2300_Infos_Buffer infos_buffer;
+
+			std::vector<ILD2300_Info> ILD2300_infos_tmp = infos_buffer.infos_v; //或者使用BufSize
 			ILD2300_infos_tmp.reserve(ceil(double(read/valsPerFrame)));
 
 			//每隔g_SubSampleRate个数据采样一次
@@ -822,7 +875,9 @@ bool GetData (uint32_t sensorInstance)
 				}
 
 
-			pushILD2300Info(ILD2300_infos_tmp);
+			getVelocityByGPS(oldGpsStr, infos_buffer.distance, infos_buffer.v);
+			pushILD2300Info(infos_buffer);
+
 
 #if !defined(_WIN32)
 			fflush( stdout );
@@ -835,14 +890,15 @@ bool GetData (uint32_t sensorInstance)
 	return true;
 	}
 
+
 //从缓存队列中提取distances数据
 void getDistances(std::vector<double>* distances, int limit)
 {
-	int size = ILD2300_infos.size();
+	int size = g_ILD2300_infos_buffer.size();
 	for(int i=0; i < size; i++)
 	{
-		std::vector<ILD2300_Info> tmp_v = ILD2300_infos.front(); 
-		ILD2300_infos.pop_front();
+		std::vector<ILD2300_Info> tmp_v = g_ILD2300_infos_buffer.front().infos_v; 
+		g_ILD2300_infos_buffer.pop_front();
 
 		int count = tmp_v.size();
 		for (int i = 0; i < count;i++)
@@ -861,9 +917,10 @@ void getDistances(std::vector<double>* distances, int limit)
 boolean isDataEnough(int limit)
 {
 	int count = 0;
-	for (std::deque<std::vector<ILD2300_Info>>::iterator it = ILD2300_infos.begin(); it != ILD2300_infos.end(); ++it)
+	for (std::deque<ILD2300_Infos_Buffer>::iterator it = g_ILD2300_infos_buffer.begin(); 
+		it != g_ILD2300_infos_buffer.end(); ++it)
 	{
-		count += it->size();
+		count += it->infos_v.size();
 		if (count > limit)
 			return true;			
 	}
@@ -938,7 +995,7 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		Sleep(300); // 暂停
 		
 		criticalSectionILD2300.Lock();
-		int size = ILD2300_infos.size();
+		int size = g_ILD2300_infos_buffer.size();
 			
 		if (!isDataEnough(dataNumLimit)){
 			criticalSectionILD2300.Unlock();
