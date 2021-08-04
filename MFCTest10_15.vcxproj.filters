@@ -81,6 +81,12 @@
     <ClCompile Include="SockDlg.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="IRIDialog.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GPS_Info.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="serial\CnCommDlg.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -97,12 +103,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="serial\TimeoutsDlg.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="IRIDialog.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="GPS_Info.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -194,6 +194,12 @@
     <ClInclude Include="SockDlg.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="IRIDialog.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GPS_Info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="serial\CnComm.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -216,12 +222,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="serial\TimeoutsDlg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="IRIDialog.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="GPS_Info.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

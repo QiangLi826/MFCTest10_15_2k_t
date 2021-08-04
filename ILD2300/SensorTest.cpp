@@ -44,10 +44,10 @@ class ILD2300_Info
 	public:
 		ILD2300_Info() {
 		}
-		uint32_t rawData; // Distance1 
+		//uint32_t rawData; // Distance1 
 		double scaledData; // Distance1 scaledData
 		double timestamp;
-		double frequency;
+		//double frequency;
 		~ILD2300_Info() {
 		}
 };
@@ -60,7 +60,8 @@ class ILD2300_Infos_Buffer
 		}
 		std::vector<ILD2300_Info> infos_v;
 		double distance;
-		double v;	
+		double v;	// m/s
+		bool isGPSInfoValid;
 		~ILD2300_Infos_Buffer() {
 		}
 };
@@ -122,7 +123,7 @@ extern CString g_lastGpsStr;
 extern CString g_currentGpsStr;
 extern CCriticalSection criticalSectionGPSStr;
 extern boolean g_isGPSOpen;
-#define INVALID_VALUE	-1
+#define INVALID_VALUE	0.0
 
 
 
@@ -752,13 +753,17 @@ void pushILD2300Info(ILD2300_Infos_Buffer& infos_buffer)
 
 
 //计算速度和距离 By GPS
-void getVelocityByGPS(CString& oldGpsStr, double& distance, double& v)
-{
-	//gps没有打开
+void getVelocityByGPS(CString& oldGpsStr, double& distance, double& v, bool& isGPSInfoValid)
+{	
+	//gps功能是否打开
 	if (!g_isGPSOpen)
 	{
 		distance = INVALID_VALUE;
 		v = INVALID_VALUE;
+		isGPSInfoValid = false;
+
+		//重置，防止gps开关再打开使用很久以前的数据。
+		oldGpsStr = '\0';
 		return;
 	}
 
@@ -766,10 +771,52 @@ void getVelocityByGPS(CString& oldGpsStr, double& distance, double& v)
 	criticalSectionGPSStr.Lock();
 	newGpsStr += g_currentGpsStr;
 	criticalSectionGPSStr.Unlock();
+
+	
 	GPS_Info currentGps(newGpsStr);
 	GPS_Info lastGps(oldGpsStr);
+
+	//如果两个gps数据中有一个数据无效，那么本次计算就不使用gps计算速度。
+	if (!currentGps.isGPSInfoValid || !lastGps.isGPSInfoValid) 
+	{
+		distance = INVALID_VALUE;
+		v = INVALID_VALUE;
+		isGPSInfoValid = false;
+
+
+		//这里不用重置oldGpsStr
+		//可能是gps开关打开间隙，还没有采集到数据;
+		//也有可能是因为gps获取到的本身就是无效数据。
+		//oldGpsStr = '\0';
+		return;
+	}
+
+
+
 	GPS_Info::getDistance(distance, lastGps, currentGps);
 	GPS_Info::getVelocity(v, distance, lastGps, currentGps);
+	isGPSInfoValid = true;
+	oldGpsStr = newGpsStr;
+}
+
+//根据车速计算采样频率
+void calculateSubSampleRate(ILD2300_Infos_Buffer& infos_buffer, const int32_t& read)
+{
+	int frequency = 20000; // 目前点激光采集频率是20KHz	
+	double vPerSecond;
+	if (infos_buffer.isGPSInfoValid)
+	{
+		vPerSecond = infos_buffer.v;
+	}
+	else
+	{
+		// GPS无效的情况下，默认行车速度为20km/h
+		vPerSecond = 20 * 1000 / 3600; // m/s
+		infos_buffer.v = vPerSecond;
+		infos_buffer.distance = read * vPerSecond / valsPerFrame / frequency;
+	}
+
+	g_SubSampleRate = ceil(g_RIRMinDX * frequency / vPerSecond);
 }
 
 /** Read continuous data from sensor and show each first frame at console
@@ -790,14 +837,14 @@ bool GetData (uint32_t sensorInstance)
 		printf ("GetData: Could not allocate buffer\n");
 		}
 
+	//初始化
+	CString oldGpsStr='\0';	
+	criticalSectionGPSStr.Lock();
+	oldGpsStr += g_currentGpsStr;
+	criticalSectionGPSStr.Unlock();
 
 	while (1)
-		{
-		CString oldGpsStr;		
-		criticalSectionGPSStr.Lock();
-		oldGpsStr += g_currentGpsStr;
-		criticalSectionGPSStr.Unlock();
-
+		{			
 
 		if (sensorIsMEBUS)
 			{
@@ -842,11 +889,20 @@ bool GetData (uint32_t sensorInstance)
 			//printf ("[%5d/%5d] \n\r", read, avail);
 
 			ILD2300_Infos_Buffer infos_buffer;
-
 			std::vector<ILD2300_Info> ILD2300_infos_tmp = infos_buffer.infos_v; //或者使用BufSize
-			ILD2300_infos_tmp.reserve(ceil(double(read/valsPerFrame)));
+			
+			//如果采集够快可以达到gps速度和点激光采样数据实时。
+			//有gps，按照平均车速计算采样率。两次GPS数据分别取上一轮采集点激光数据时获取gps数据和当前的值gps数据
+			//	（这个数据再给下一轮用）。两次gps数据有一次无效就按照没有gps处理。
+			//没有gps, 按照20km/h计算采样率 g_SubSampleRate和，
 
-			//每隔g_SubSampleRate个数据采样一次
+			getVelocityByGPS(oldGpsStr, infos_buffer.distance, infos_buffer.v, infos_buffer.isGPSInfoValid);
+
+			calculateSubSampleRate(infos_buffer, read);
+
+			ILD2300_infos_tmp.reserve(ceil(double(read/valsPerFrame/g_SubSampleRate) + 1));
+
+			//每隔g_SubSampleRate数据采样一次
 			for (int32_t i = indexDistance1; i < read && (i+ valsPerFrame*g_SubSampleRate) < read; i+= (valsPerFrame*g_SubSampleRate))
 				{
 				//ClearLine();
@@ -861,24 +917,18 @@ bool GetData (uint32_t sensorInstance)
 				else
 				{
 					//printf("%u (%-.3f)", static_cast<uint32_t>(rawData[i]), scaledData[i]);
-					tmp_info.rawData = static_cast<uint32_t>(rawData[i]);
+					//tmp_info.rawData = static_cast<uint32_t>(rawData[i]);
 					tmp_info.scaledData = scaledData[i];				
 				}
 
 				//printf(", TS %.3f", timestamp);
-				tmp_info.timestamp = timestamp; // TODO: 这个是最老的那个点的时间。暂时每个点都记录下时间。
-#if defined (MEAS_FREQUENCY)
-				//printf(" @ %.3f Hz", frequency);
-				tmp_info.frequency = frequency; 
-#endif
+				tmp_info.timestamp = timestamp; // 这个是最老的那个点的时间。暂时每个点都记录下时间。
+
 				ILD2300_infos_tmp.push_back(tmp_info);
 				}
 
-
-			getVelocityByGPS(oldGpsStr, infos_buffer.distance, infos_buffer.v);
+			
 			pushILD2300Info(infos_buffer);
-
-
 #if !defined(_WIN32)
 			fflush( stdout );
 #endif //if not def Win32
@@ -892,36 +942,47 @@ bool GetData (uint32_t sensorInstance)
 
 
 //从缓存队列中提取distances数据
-void getDistances(std::vector<double>* distances, int limit)
+void getDistances(std::vector<double>* distances, double& v)
 {
 	int size = g_ILD2300_infos_buffer.size();
+	double total_distance=0;
+	double total_time=0; 
+
 	for(int i=0; i < size; i++)
 	{
-		std::vector<ILD2300_Info> tmp_v = g_ILD2300_infos_buffer.front().infos_v; 
+		ILD2300_Infos_Buffer info_buffer = g_ILD2300_infos_buffer.front();
+		std::vector<ILD2300_Info> tmp_v = info_buffer.infos_v; 
 		g_ILD2300_infos_buffer.pop_front();
 
+		total_distance += info_buffer.distance;
+		total_time += info_buffer.distance/info_buffer.v;
+
 		int count = tmp_v.size();
-		for (int i = 0; i < count;i++)
+		for (int j = 0; j < count;j++)
 		{
 			distances->push_back(double(tmp_v[i].scaledData/1000)); //mm转换成m
 		}
 
-		if (distances->size() >= limit){			
+		if (total_distance >= g_IRIMinLength){	
+			total_time == 0 ?  v = 0 : v = total_distance/total_time;
 			break;
 		}
 	}
+
+	total_time == 0 ?  v = 0 : v = total_distance/total_time;
 }
 
 
 //判断计算iri的源数据是否充足
-boolean isDataEnough(int limit)
+boolean isDataEnough()
 {
 	int count = 0;
 	for (std::deque<ILD2300_Infos_Buffer>::iterator it = g_ILD2300_infos_buffer.begin(); 
 		it != g_ILD2300_infos_buffer.end(); ++it)
 	{
-		count += it->infos_v.size();
-		if (count > limit)
+		count += it->distance;
+		//保证有g_IRIMinLength米数据
+		if (count > g_IRIMinLength)
 			return true;			
 	}
 
@@ -976,54 +1037,32 @@ void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_resu
 */
 UINT processILD2300InfosThread(LPVOID lparam)
 {
-	double v = 80.0; //1/4车辆行驶速度（km/h）
-			
-	double vPerSecond = v * 1000 / 3600; // m/s
-			
-	int frequency = 20000; //目前点激光采集频率是20KHz
-	
 	double dx = g_RIRMinDX;
-	
-	//根据采样间隔调整采样频率。
-	g_SubSampleRate = ceil(g_RIRMinDX * frequency / vPerSecond);
-
-	//计算iri需要最少的数据量 10m / vPerSecond * frequency / g_SubSampleRate
-	int dataNumLimit  = g_IRIMinLength * frequency / g_SubSampleRate / vPerSecond ; 
-
 
 	while (1) {		
 		Sleep(300); // 暂停
 		
 		criticalSectionILD2300.Lock();
-		int size = g_ILD2300_infos_buffer.size();
-			
-		if (!isDataEnough(dataNumLimit)){
+		
+		if (!isDataEnough()){
 			criticalSectionILD2300.Unlock();
 			continue;
 		}
 			
 		std::vector<double> distances;
 		
-		getDistances(&distances, dataNumLimit);
+		double v=0;
+		getDistances(&distances, v);
 		criticalSectionILD2300.Unlock();
 
 
-
-
-		printf("ild2300 queue size %d,  vPerSecond:(%-.3f) dx: (%-.3f)  distances.size: %d dataNumLimit:%d \n\r"
-			, size, vPerSecond, dx,distances.size(), dataNumLimit);
+		printf("ild2300 queue size %d,  dx: (%-.3f)  distances.size: %d  \n\r", g_ILD2300_infos_buffer.size(), dx, distances.size());
 		
 
 		double IRI_length = 0.0;
 		double IRI_result = 0.0;
-		iri(distances, dx, v, &IRI_length, &IRI_result);
-
-		printf("ild2300 queue size %d,  vPerSecond:(%-.3f) dx: (%-.3f)  distances.size: %d dataNumLimit:%d \n\r"
-			, size, vPerSecond, dx,distances.size(), dataNumLimit);
-		
-		printf("IRI_length:%-.3f IRI_result:%-.3f", IRI_length, IRI_result);		
-		
-
+		iri(distances, dx, v, &IRI_length, &IRI_result);		
+		//printf("IRI_length:%-.3f IRI_result:%-.3f", IRI_length, IRI_result);	
 
 		IRI_Info iriInfo;
 		getIRIInfo(iriInfo, dx, IRI_length, IRI_result, v);

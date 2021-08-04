@@ -405,6 +405,8 @@ void SerialDlg::OnButtonOpen()
 			GetDlgItem(item_id[i])->EnableWindow(!GetDlgItem(item_id[i])->IsWindowEnabled());
 
 		g_isGPSOpen = false;
+		g_lastGpsStr='\0';   
+		g_currentGpsStr='\0';
 	}
 	
 	

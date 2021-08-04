@@ -10,24 +10,25 @@ GPS_Info::GPS_Info(CString tmp)
 {
 	CStringArray gpsStrArray;
 	SplitStr(tmp, ",", gpsStrArray);
-	if (gpsStrArray.GetSize() == 17)
-	{
-		//不能是无效解
-		if (gpsStrArray.GetAt(15)!='0' )
-		{
-			x = atof(gpsStrArray.GetAt(12));
-			y = atof(gpsStrArray.GetAt(13));
-			z = atof(gpsStrArray.GetAt(14));
+	if (gpsStrArray.GetSize() != 17)
+		isGPSInfoValid = false;
 
-			//utc时间转换成秒
-			CString utc = gpsStrArray.GetAt(4);
-			CString h = utc.Left(2);
-			CString m = utc.Mid(2,2);
-			CString s = utc.Right(5);
+		//无效解
+	if (gpsStrArray.GetAt(15)=='0' )
+		isGPSInfoValid = false;
+	
+	x = atof(gpsStrArray.GetAt(12));
+	y = atof(gpsStrArray.GetAt(13));
+	z = atof(gpsStrArray.GetAt(14));
 
-			time = atof(h)*3600 + atof(m)*60 + atof(s);
-		}
-	}
+	//utc时间转换成秒
+	CString utc = gpsStrArray.GetAt(4);
+	CString h = utc.Left(2);
+	CString m = utc.Mid(2,2);
+	CString s = utc.Right(5);
+
+	time = atof(h)*3600 + atof(m)*60 + atof(s);
+	
 }
 
 GPS_Info::~GPS_Info()
@@ -65,12 +66,14 @@ void GPS_Info::getDistance(double& distance, GPS_Info&lastGps, GPS_Info &current
 }
 
 
-
+//计算速度
 void GPS_Info::getVelocity(double& v, double distance, GPS_Info& lastGps, GPS_Info &currentGps)
 {
 	double time = currentGps.time >=
 		lastGps.time ? (currentGps.time - lastGps.time) : (currentGps.time + 5184000 - lastGps.time);
-	v = distance / time;
+
+	time = 0.0 ? v = 0.0 : v = distance / time;
+	
 }
 
 
