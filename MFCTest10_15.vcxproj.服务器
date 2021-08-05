@@ -139,6 +139,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ExternFile.cpp" />
+    <ClCompile Include="GPS_Info.cpp" />
     <ClCompile Include="ILD2300\SensorTest.cpp" />
     <ClCompile Include="IRIDialog.cpp" />
     <ClCompile Include="MainFrm.cpp">
@@ -188,6 +189,7 @@
     <ClInclude Include="DataContext.h" />
     <ClInclude Include="DataProcess.h" />
     <ClInclude Include="Device.h" />
+    <ClInclude Include="GPS_Info.h" />
     <ClInclude Include="ILD2300\MEDAQLib.h" />
     <ClInclude Include="ILD2300\SensorTest.h" />
     <ClInclude Include="IRIDialog.h" />

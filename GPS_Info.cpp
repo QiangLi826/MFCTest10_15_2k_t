@@ -10,9 +10,14 @@ GPS_Info::GPS_Info(CString tmp)
 {
 	CStringArray gpsStrArray;
 	SplitStr(tmp, ",", gpsStrArray);
-	if (gpsStrArray.GetSize() != 17)
+	if (gpsStrArray.GetSize() != 17){
 		isGPSInfoValid = false;
-
+		x=0;
+		y=0;
+		z=0;
+		time=0;
+		return;
+	}
 		//ÎÞÐ§½â
 	if (gpsStrArray.GetAt(15)=='0' )
 		isGPSInfoValid = false;
@@ -72,7 +77,7 @@ void GPS_Info::getVelocity(double& v, double distance, GPS_Info& lastGps, GPS_In
 	double time = currentGps.time >=
 		lastGps.time ? (currentGps.time - lastGps.time) : (currentGps.time + 5184000 - lastGps.time);
 
-	time = 0.0 ? v = 0.0 : v = distance / time;
+	v = (time == 0.0 )? 0.0 : distance / time;
 	
 }
 

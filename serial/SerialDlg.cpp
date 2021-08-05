@@ -33,7 +33,7 @@ SerialDlg::SerialDlg(int iInstance, CWnd* pParent /*=NULL*/)
 : CDialog(SerialDlg::IDD, pParent), iInstance_(iInstance)
 {
 	//{{AFX_DATA_INIT(SerialDlg)
-	m_sBaudrate = _T("9600");
+	m_sBaudrate = _T("115200");
 	m_iBitsSize = 4;
 	m_iPort = 0;
 	m_iParity = 0;
@@ -259,23 +259,16 @@ LRESULT SerialDlg::OnReceive(WPARAM wParam, LPARAM lParam)
 					m_sRx += hex_buffer;
 				}
 				else{
+					if (m_sRx.GetLength() > 10000)
+					{
+						m_sRx = '\0';
+					}
 					m_sRx += buffer;
 
 					criticalSectionGPSStr.Lock();
 					g_lastGpsStr = g_currentGpsStr;
 					g_currentGpsStr = buffer;
 					criticalSectionGPSStr.Unlock();
-
-					GPS_Info currentGps(g_currentGpsStr);
-					GPS_Info lastGps(g_lastGpsStr);
-					
-					double distance =  sqrtf((lastGps.x - currentGps.x) * (lastGps.x - currentGps.x) +
-						(lastGps.y - currentGps.y) * (lastGps.y - currentGps.y)
-						+ (lastGps.z - currentGps.z) * (lastGps.z - currentGps.z));
-
-					double time = currentGps.time >= 
-						lastGps.time ? (currentGps.time - lastGps.time) : (currentGps.time + 5184000 - lastGps.time);
-					double v = distance/time;
 				}
 			}
 

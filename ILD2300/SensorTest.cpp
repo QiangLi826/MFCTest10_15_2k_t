@@ -111,7 +111,7 @@ std::deque<IRI_Info> IRI_infosRaw;
 
 
 
-#define MAX_ILD2300_Infos_Buffer	200
+#define MAX_ILD2300_Infos_Buffer	400
 //distance在返回数据结构中的索引
 uint32_t indexDistance1 = 0;
 std::deque<ILD2300_Infos_Buffer> g_ILD2300_infos_buffer;
@@ -742,6 +742,7 @@ void pushILD2300Info(ILD2300_Infos_Buffer& infos_buffer)
 		//printf("pushILD2300Info \n\r");
 		g_ILD2300_infos_buffer.push_back(infos_buffer); //互斥访问当缓存队列	
 		criticalSectionILD2300.Unlock();
+		infos_buffer.infos_v.clear();
 	}
 	else
 	{
@@ -800,9 +801,15 @@ void getVelocityByGPS(CString& oldGpsStr, double& distance, double& v, bool& isG
 }
 
 //根据车速计算采样频率
-void calculateSubSampleRate(ILD2300_Infos_Buffer& infos_buffer, const int32_t& read)
+void calculateSubSampleRate(ILD2300_Infos_Buffer& infos_buffer, const int32_t& read, double frequency)
 {
-	int frequency = 20000; // 目前点激光采集频率是20KHz	
+	//int frequency = 10000; // 目前点激光采集频率是20KHz	
+	//第一个数据过来的时候频率为0，
+	if (frequency == 0)
+	{
+		frequency = 10000;
+	}
+
 	double vPerSecond;
 	if (infos_buffer.isGPSInfoValid)
 	{
@@ -889,7 +896,7 @@ bool GetData (uint32_t sensorInstance)
 			//printf ("[%5d/%5d] \n\r", read, avail);
 
 			ILD2300_Infos_Buffer infos_buffer;
-			std::vector<ILD2300_Info> ILD2300_infos_tmp = infos_buffer.infos_v; //或者使用BufSize
+			std::vector<ILD2300_Info> &ILD2300_infos_tmp = infos_buffer.infos_v; //或者使用BufSize
 			
 			//如果采集够快可以达到gps速度和点激光采样数据实时。
 			//有gps，按照平均车速计算采样率。两次GPS数据分别取上一轮采集点激光数据时获取gps数据和当前的值gps数据
@@ -898,10 +905,10 @@ bool GetData (uint32_t sensorInstance)
 
 			getVelocityByGPS(oldGpsStr, infos_buffer.distance, infos_buffer.v, infos_buffer.isGPSInfoValid);
 
-			calculateSubSampleRate(infos_buffer, read);
+			calculateSubSampleRate(infos_buffer, read, frequency);
 
 			ILD2300_infos_tmp.reserve(ceil(double(read/valsPerFrame/g_SubSampleRate) + 1));
-
+			
 			//每隔g_SubSampleRate数据采样一次
 			for (int32_t i = indexDistance1; i < read && (i+ valsPerFrame*g_SubSampleRate) < read; i+= (valsPerFrame*g_SubSampleRate))
 				{
@@ -942,10 +949,9 @@ bool GetData (uint32_t sensorInstance)
 
 
 //从缓存队列中提取distances数据
-void getDistances(std::vector<double>* distances, double& v)
+void getDistances(std::vector<double>* distances, double& v, double& total_distance)
 {
-	int size = g_ILD2300_infos_buffer.size();
-	double total_distance=0;
+	int size = g_ILD2300_infos_buffer.size();	
 	double total_time=0; 
 
 	for(int i=0; i < size; i++)
@@ -960,30 +966,36 @@ void getDistances(std::vector<double>* distances, double& v)
 		int count = tmp_v.size();
 		for (int j = 0; j < count;j++)
 		{
-			distances->push_back(double(tmp_v[i].scaledData/1000)); //mm转换成m
+			distances->push_back(double(tmp_v[j].scaledData/1000)); //mm转换成m
 		}
 
 		if (total_distance >= g_IRIMinLength){	
-			total_time == 0 ?  v = 0 : v = total_distance/total_time;
+			v = (total_time == 0) ?   0 : total_distance/total_time;
 			break;
 		}
 	}
 
-	total_time == 0 ?  v = 0 : v = total_distance/total_time;
+	v = total_time == 0 ?  0 : total_distance/total_time;
 }
 
 
 //判断计算iri的源数据是否充足
 boolean isDataEnough()
 {
-	int count = 0;
+	double count = 0;
 	for (std::deque<ILD2300_Infos_Buffer>::iterator it = g_ILD2300_infos_buffer.begin(); 
 		it != g_ILD2300_infos_buffer.end(); ++it)
 	{
 		count += it->distance;
 		//保证有g_IRIMinLength米数据
 		if (count > g_IRIMinLength)
-			return true;			
+			return true;
+	}
+
+	//发生这种情况应该是通过gps计算的车速太慢了。
+	if (g_ILD2300_infos_buffer.size() >= MAX_ILD2300_Infos_Buffer * 0.8)
+	{
+		return true;
 	}
 
 	return false;
@@ -1052,7 +1064,8 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		std::vector<double> distances;
 		
 		double v=0;
-		getDistances(&distances, v);
+		double total_distance=0; //gps计算的路程
+		getDistances(&distances, v, total_distance);
 		criticalSectionILD2300.Unlock();
 
 
@@ -1065,7 +1078,7 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		//printf("IRI_length:%-.3f IRI_result:%-.3f", IRI_length, IRI_result);	
 
 		IRI_Info iriInfo;
-		getIRIInfo(iriInfo, dx, IRI_length, IRI_result, v);
+		getIRIInfo(iriInfo, dx, total_distance, IRI_result, v);
 
 
 		criticalSectionIRI.Lock();
