@@ -174,8 +174,19 @@ void CMFCTest10_15App::OnAppAcceleration()
 void CMFCTest10_15App::OnGps()
 {
 	// TODO: 在此添加命令处理程序代码
-	CnCommDlg dlg;
-	dlg.DoModal();
+	//dlg.DoModal();
+	
+    // 创建非模态对话框实例   
+	if (dlg == NULL)
+	{
+		dlg = new CnCommDlg();		
+		dlg->Create(CnCommDlg::IDD);   
+	}
+  
+    
+    // 显示非模态对话框   
+    dlg->ShowWindow(SW_SHOW);   
+	
 }
 
 

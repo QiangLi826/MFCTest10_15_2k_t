@@ -7,8 +7,7 @@
 #endif
 
 #include "resource.h"       // 主符号
-
-
+#include "serial/CnCommDlg.h"
 
 // CMFCTest10_15App:
 // 有关此类的实现，请参阅 MFCTest10_15.cpp
@@ -18,6 +17,7 @@ class CMFCTest10_15App : public CWinApp
 {
 public:
 	CMFCTest10_15App();
+	CnCommDlg *dlg;
 	
 // 重写
 public:
@@ -29,7 +29,8 @@ public:
 	virtual int ExitInstance();
 	afx_msg void OnAppAcceleration();
 	afx_msg void OnGps();
-	afx_msg void Onmenuiri();
+	afx_msg void Onmenuiri();	
 };
 
 extern CMFCTest10_15App theApp;
+
