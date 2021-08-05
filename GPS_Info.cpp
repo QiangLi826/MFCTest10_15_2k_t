@@ -9,18 +9,21 @@ GPS_Info::GPS_Info()
 GPS_Info::GPS_Info(CString tmp)
 {
 	CStringArray gpsStrArray;
-	SplitStr(tmp, ",", gpsStrArray);
+	GPS_Info::SplitStr(tmp, ",", gpsStrArray);
 	if (gpsStrArray.GetSize() != 17){
 		isGPSInfoValid = false;
+		isGPSFormatValid = false;
 		x=0;
 		y=0;
 		z=0;
 		time=0;
 		return;
 	}
+	isGPSFormatValid = true;
 		//无效解
 	if (gpsStrArray.GetAt(15)=='0' )
 		isGPSInfoValid = false;
+	
 	
 	x = atof(gpsStrArray.GetAt(12));
 	y = atof(gpsStrArray.GetAt(13));
@@ -28,12 +31,27 @@ GPS_Info::GPS_Info(CString tmp)
 
 	//utc时间转换成秒
 	CString utc = gpsStrArray.GetAt(4);
-	CString h = utc.Left(2);
-	CString m = utc.Mid(2,2);
-	CString s = utc.Right(5);
+	CString h;
+	CString m;
+	CString s;
+
+	// 62925.00
+	if(utc.GetLength()==8)
+	{
+		h = utc.Left(1);
+		m = utc.Mid(1,2);
+		s = utc.Right(5);
+	}
+	// 162925.00
+	else
+	{
+		h = utc.Left(2);
+		m = utc.Mid(2,2);
+		s = utc.Right(5);
+	}	
 
 	time = atof(h)*3600 + atof(m)*60 + atof(s);
-	
+	isGPSInfoValid = true;
 }
 
 GPS_Info::~GPS_Info()

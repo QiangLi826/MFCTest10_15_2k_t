@@ -784,7 +784,8 @@ void getVelocityByGPS(CString& oldGpsStr, double& distance, double& v, bool& isG
 		v = INVALID_VALUE;
 		isGPSInfoValid = false;
 
-
+		oldGpsStr = '\0';
+		oldGpsStr = newGpsStr;
 		//这里不用重置oldGpsStr
 		//可能是gps开关打开间隙，还没有采集到数据;
 		//也有可能是因为gps获取到的本身就是无效数据。
@@ -796,7 +797,15 @@ void getVelocityByGPS(CString& oldGpsStr, double& distance, double& v, bool& isG
 
 	GPS_Info::getDistance(distance, lastGps, currentGps);
 	GPS_Info::getVelocity(v, distance, lastGps, currentGps);
+	
+	// 保证速度不小于0.01m/s 
+	if (v < 0.01)
+	{
+		v = 0.01;
+	}
+
 	isGPSInfoValid = true;
+	oldGpsStr = '\0';
 	oldGpsStr = newGpsStr;
 }
 
@@ -822,6 +831,7 @@ void calculateSubSampleRate(ILD2300_Infos_Buffer& infos_buffer, const int32_t& r
 		infos_buffer.v = vPerSecond;
 		infos_buffer.distance = read * vPerSecond / valsPerFrame / frequency;
 	}
+
 
 	g_SubSampleRate = ceil(g_RIRMinDX * frequency / vPerSecond);
 }
