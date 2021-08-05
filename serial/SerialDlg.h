@@ -85,7 +85,9 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(SerialDlg)
-	afx_msg LRESULT OnReceive(WPARAM, LPARAM);
+	afx_msg
+		void updateGlobalGpsData(char  buffer[1024]);
+	LRESULT OnReceive(WPARAM, LPARAM);
 	afx_msg LRESULT OnRLSD(WPARAM, LPARAM);
 	afx_msg LRESULT OnBreak(WPARAM, LPARAM);
 	afx_msg LRESULT OnRing(WPARAM, LPARAM);

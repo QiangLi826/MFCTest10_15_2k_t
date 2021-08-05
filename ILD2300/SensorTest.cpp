@@ -917,7 +917,9 @@ bool GetData (uint32_t sensorInstance)
 
 			calculateSubSampleRate(infos_buffer, read, frequency);
 
-			ILD2300_infos_tmp.reserve(ceil(double(read/valsPerFrame/g_SubSampleRate) + 1));
+			int count = ceil(double(read/valsPerFrame/g_SubSampleRate))+ 1; // TODO:观察这里到底什么问题。
+			printf("count：%d read: %d, g_SubSampleRate:%d", count, valsPerFrame, g_SubSampleRate);
+			ILD2300_infos_tmp.reserve(read);
 			
 			//每隔g_SubSampleRate数据采样一次
 			for (int32_t i = indexDistance1; i < read && (i+ valsPerFrame*g_SubSampleRate) < read; i+= (valsPerFrame*g_SubSampleRate))

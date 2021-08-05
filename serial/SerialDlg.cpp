@@ -239,6 +239,62 @@ void SerialDlg::OnDestroy()
 	if (m_uSendTimer)
 		KillTimer(2);
 }
+
+//更新gps数据
+void SerialDlg::updateGlobalGpsData(char  buffer[1024])
+{
+	//传输的字符不一定在哪里截断，数据长度也不一定。
+	CStringArray gpsBufferArray;
+	g_BufferStr += buffer;
+	GPS_Info::SplitStr(g_BufferStr, "\r\n", gpsBufferArray);
+	if (gpsBufferArray.GetSize() >= 2)
+	{
+		bool isFindValid = false;
+		bool isTheLastGPSFormatValid = false; //最后一个数据是否格式正确
+		int i = gpsBufferArray.GetSize() - 1;
+		for (i; i >= 0; i--)
+		{
+			CString temp = gpsBufferArray.GetAt(i);
+			GPS_Info gps_t(temp);
+
+			if (i == gpsBufferArray.GetSize() - 1)
+			{
+				isTheLastGPSFormatValid = gps_t.isGPSFormatValid;
+			}
+			//格式正确，并且不是无效解
+			if (gps_t.isGPSInfoValid)
+			{
+				criticalSectionGPSStr.Lock();
+				g_lastGpsStr = '\0';
+				g_lastGpsStr += g_currentGpsStr;
+				g_currentGpsStr = '\0';
+				g_currentGpsStr += temp;
+				criticalSectionGPSStr.Unlock();
+				isFindValid = true;
+				break;
+			}
+		}
+
+		//最后一个有效
+		if (isFindValid && (i == gpsBufferArray.GetSize() - 1))
+		{
+			g_BufferStr.Empty();
+		}
+		//最后一个无效
+		else
+		{
+			//最后一个格式正确，但是无效解
+			if (isTheLastGPSFormatValid)
+			{
+				g_BufferStr.Empty();
+			}
+			else
+			{
+				g_BufferStr = gpsBufferArray.GetAt(gpsBufferArray.GetSize() - 1);
+			}
+		}
+	}
+}
 //! 串口接收消息 读取串口数据
 LRESULT SerialDlg::OnReceive(WPARAM wParam, LPARAM lParam)
 {
@@ -267,59 +323,6 @@ LRESULT SerialDlg::OnReceive(WPARAM wParam, LPARAM lParam)
 						m_sRx = '\0';
 					}
 					m_sRx += buffer;
-
-
-					//传输的字符不一定在哪里截断，数据长度也不一定。
-					CStringArray gpsBufferArray;
-					g_BufferStr+= buffer;		
-					GPS_Info::SplitStr(g_BufferStr, "\r\n", gpsBufferArray);
-					if (gpsBufferArray.GetSize() >= 2)
-					{						
-						bool isFindValid = false;
-						bool isTheLastGPSFormatValid = false; //最后一个数据是否格式正确
-						int i = gpsBufferArray.GetSize() - 1;
-						for(i; i >= 0; i--)
-						{
-							CString temp = gpsBufferArray.GetAt(i);
-							GPS_Info gps_t(temp);
-
-							if(i == gpsBufferArray.GetSize() - 1)
-							{
-								isTheLastGPSFormatValid = gps_t.isGPSFormatValid;
-							}
-							//格式正确，并且不是无效解
-							if (gps_t.isGPSInfoValid)
-							{
-								criticalSectionGPSStr.Lock();
-								g_lastGpsStr = '\0';
-								g_lastGpsStr += g_currentGpsStr;
-								g_currentGpsStr = '\0';
-								g_currentGpsStr += temp;
-								criticalSectionGPSStr.Unlock();
-								isFindValid = true;
-								break;
-							}
-						}
-
-						//最后一个有效
-						if (isFindValid && (i == gpsBufferArray.GetSize() - 1))
-						{		
-							g_BufferStr.Empty();							
-						}
-						//最后一个无效
-						else
-						{
-							//最后一个格式正确，但是无效解
-							if (isTheLastGPSFormatValid)
-							{
-								g_BufferStr.Empty();
-							}
-							else
-							{
-								g_BufferStr = gpsBufferArray.GetAt(gpsBufferArray.GetSize() - 1);
-							}	
-						}
-					}
 				}
 			}
 
@@ -330,6 +333,11 @@ LRESULT SerialDlg::OnReceive(WPARAM wParam, LPARAM lParam)
 				fwrite(buffer, len, 1, fp);
 				fclose(fp);
 			}
+
+			//更新gps数据
+			updateGlobalGpsData(buffer);
+
+
 			//! 接收缓冲模式下，要确保把已经在Comm_.Input()缓冲区的数据处理完
 			//! 否则如果没有新的数据再来，不会继续通知你
 		} while(Comm_.IsRxBufferMode() && Comm_.Input().SafeSize());
