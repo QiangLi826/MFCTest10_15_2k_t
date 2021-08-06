@@ -1,4 +1,7 @@
 #pragma once
+#include <vector>
+
+int calculateSMTDs(double L, double D, double l, std::vector<double>& incsv, double& SMTD);
 
 void calculateSMTD(int n, std::vector<int>& incsv, int j, int* x, double* smtd);
 

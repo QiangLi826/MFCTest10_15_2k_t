@@ -23,6 +23,7 @@
 #include <vector>
 #include <afxmt.h>
 #include "algorithm/IRI.h"
+#include "algorithm/SMTD.h"
 #include "SensorTest.h"
 #include "GPS_Info.h"
 
@@ -82,7 +83,7 @@ CString IRI_Info::toString()
 	output += tmp;
 	tmp.Format(_T("，统计长度: %-.3f m"), IRI_length); 
 	output += tmp;
-	tmp.Format(_T("，统计统计间隔: %-.3f m"), dx); 
+	tmp.Format(_T("，统计间隔: %-.3f m"), dx); 
 	output += tmp;
 	tmp.Format(_T("，车速: %-.3f km/h"), v); 
 	output += tmp;
@@ -98,6 +99,16 @@ CString IRI_Info::toString()
 		tmp.Format(_T("，320m平均IRI: %-.3f m/km"), IRI_result_320m_average); 
 		output += tmp;
 	}
+
+	tmp.Format(_T(", SMTD %-.3f "), SMTD_result); 
+	output += tmp;
+
+	if (SMTD_result_200m_average > 0.0)
+	{
+		tmp.Format(_T("，200m SMTD: %-.3f"), SMTD_result_200m_average); 
+		output += tmp;
+	}
+	
 	return output;
 };
 
@@ -918,8 +929,8 @@ bool GetData (uint32_t sensorInstance)
 			calculateSubSampleRate(infos_buffer, read, frequency);
 
 			int count = ceil(double(read/valsPerFrame/g_SubSampleRate))+ 1;
-			printf("count：%d read: %d, g_SubSampleRate:%d isGPSInfoValid:%d v:%-.3f \r\n",
-				count, read, g_SubSampleRate, infos_buffer.isGPSInfoValid, infos_buffer.v);
+			//printf("count：%d read: %d, g_SubSampleRate:%d isGPSInfoValid:%d v:%-.3f capacity:%d \r\n",
+				//count, read, g_SubSampleRate, infos_buffer.isGPSInfoValid, infos_buffer.v, ILD2300_infos_tmp.capacity());
 			ILD2300_infos_tmp.reserve(read);
 			
 			//每隔g_SubSampleRate数据采样一次
@@ -1015,7 +1026,7 @@ boolean isDataEnough()
 }
 
 //拼装IRI展示信息。
-void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_result, double v)
+void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_result, double v,double SMTD)
 {
 	iriInfo.dx = dx;
 	iriInfo.IRI_length = IRI_length;
@@ -1023,6 +1034,8 @@ void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_resu
 	iriInfo.v = v;
 	iriInfo.IRI_result_100m_average = 0.0;
 	iriInfo.IRI_result_320m_average = 0.0;
+	iriInfo.SMTD_result = SMTD;
+	iriInfo.SMTD_result_200m_average = 0.0;
 
 	if (IRI_infosRaw.size() >= MAX_IRI_RAW_Info)
 	{
@@ -1033,6 +1046,7 @@ void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_resu
 
 	double IRI_length_total = 0.0;
 	double IRI_result_total = 0.0;
+	double SMTD_result_total = 0.0;
 	int count = 0;
 	for (int i = IRI_infosRaw.size() - 1; i >= 0; i--)
 	{
@@ -1040,11 +1054,18 @@ void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_resu
 		IRI_Info temp = IRI_infosRaw.at(i);
 		IRI_length_total += temp.IRI_length;
 		IRI_result_total += temp.IRI_result;
+		SMTD_result_total += temp.SMTD_result;
 
 		// 统计长度大于100米（可以有误差）
 		if (iriInfo.IRI_result_100m_average <= 0.0 && IRI_length_total >= 100 * 0.98)
 		{
 			iriInfo.IRI_result_100m_average = IRI_result_total / count;
+		}
+
+		//IRI和SMTD目前都是10米统计一次。
+		if (iriInfo.SMTD_result_200m_average <= 0.0 && IRI_length_total> 200 * 0.98)
+		{
+			iriInfo.SMTD_result_200m_average = SMTD_result_total / count;
 		}
 
 		// 统计长度大于320米（可以有误差）
@@ -1082,7 +1103,7 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		criticalSectionILD2300.Unlock();
 
 
-		printf("ild2300 queue size %d,  dx: (%-.3f)  distances.size: %d  \n\r", g_ILD2300_infos_buffer.size(), dx, distances.size());
+		//printf("ild2300 queue size %d,  dx: (%-.3f)  distances.size: %d  \n\r", g_ILD2300_infos_buffer.size(), dx, distances.size());
 		
 
 		double IRI_length = 0.0;
@@ -1090,9 +1111,31 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		iri(distances, dx, v, &IRI_length, &IRI_result);		
 		//printf("IRI_length:%-.3f IRI_result:%-.3f", IRI_length, IRI_result);	
 
-		IRI_Info iriInfo;
-		getIRIInfo(iriInfo, dx, total_distance, IRI_result, v);
 
+		double SMTD = 0.0;
+
+		int L = 10000; //mm  TODO:安装1mm算个假的先。先把值输出出来。
+		int D = 300; //mm
+		int l = 1; //  mm 采样间距小于2mm  TODO:就当数据是2mm采样的。
+
+		for (int i=0; i<distances.size(); i++)
+		{
+			distances[i] = distances[i]*1000;//单位转换成mm
+		}
+
+		//TODO：暂时先构造一些假数据
+		while(distances.size() < 10000)
+		{
+			distances.insert(distances.end(), distances.begin(), distances.end());
+		}
+		
+		calculateSMTDs(L ,D, l, distances, SMTD);
+
+
+
+
+		IRI_Info iriInfo;
+		getIRIInfo(iriInfo, dx, total_distance, IRI_result, v, SMTD);
 
 		criticalSectionIRI.Lock();
 		if (IRI_infos.size() >= 10)

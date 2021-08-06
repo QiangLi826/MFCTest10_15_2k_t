@@ -11,6 +11,8 @@ class IRI_Info
 		double v;
 		double IRI_result_100m_average;
 		double IRI_result_320m_average;
+		double SMTD_result;
+		double SMTD_result_200m_average;
 		~IRI_Info();
 		CString toString();		
 };

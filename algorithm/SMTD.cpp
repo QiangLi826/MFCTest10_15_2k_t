@@ -10,7 +10,7 @@
 
 using namespace std;
 
-int readCsv(vector<int> *incsv)
+int readCsv(vector<double> *incsv)
 {
     
     int intp;
@@ -42,7 +42,7 @@ int readCsv(vector<int> *incsv)
 /*
 * 计算一个SMTD
 */
-void calculateSMTD(int n, std::vector<int>& incsv, int j, int* x, double* smtd)
+void calculateSMTD(int n, std::vector<double>& incsv, int j, double* x, double* smtd)
 {
     int o = 0; int p = 0; int q = 0; int sum = 0;
     for (int i = 0; i < n; i++)
@@ -68,14 +68,14 @@ void calculateSMTD_mean(int J, double* smtd, int Jv, double* SMTD)
         sam = smtd[i] + sam;
 
     *SMTD = sam / Jv;
-    printf("统计长度L内构造深度值SMTD=%f\n", *SMTD);
+    //printf("统计长度L内构造深度值SMTD=%f\n", *SMTD);
 }
 
-int calculateSMTDs()
-{
-    int L = 600;
-    int D = 300;
-    int l = 1;
+// L=input('请输入统计长度：');  单位：mm
+// D=input('请输入计算长度：');  单位：mm
+// l=input('请输入采样间距：');  单位：mm
+int calculateSMTDs(double L, double D, double l, vector<double>& incsv, double& SMTD)
+{ 
 
 	//四舍五入
     int m = int((double)D / l + 0.5) + 1;
@@ -86,22 +86,20 @@ int calculateSMTDs()
     int J = floor((double)(L / D));
 
     int Jv = J;
-    printf("SMTD中含有%d个有效smtd\n", J);
+    //printf("SMTD中含有%d个有效smtd\n", J);
     // 每一个计算长度内的采样个数，按最近奇数取整
     int c = m % 2;
     int n = 0;
     c == 1 ? n = m : n = m - 1;
 
 
-    int* x = new int[n];
+    double* x = new double[n];
     for (int i = 0; i < n; i++) 
     {
         x[i] = (2 * (i+1) - n - 1) / 2;
         //std::cout << x[i];
     }
 
-    vector<int> incsv;
-    readCsv(&incsv);
     /*for (int i = 0; i < incsv.size(); i++)
     {
         cout << incsv[i];
@@ -112,8 +110,7 @@ int calculateSMTDs()
     {
         calculateSMTD(n, incsv, j, x, &smtd[j]);
     }
-
-    double SMTD = 0.0;
+    
     calculateSMTD_mean(J, smtd, Jv, &SMTD);
 
 
@@ -128,8 +125,15 @@ int calculateSMTDs()
 int main_smdt()
 {
     std::cout << "Start!\n";
+	int L = 600; //mm
+    int D = 300; //mm
+    int l = 1; // mm
 
-    calculateSMTDs();
+    vector<double> incsv;
+    readCsv(&incsv);
+	double SMTD;
+    calculateSMTDs(L ,D, l, incsv, SMTD);
+
     std::cout << "Edn!\n";
 	return 0;
 }
