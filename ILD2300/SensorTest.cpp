@@ -31,9 +31,11 @@ static bool sensorIsMEBUS= false;
 static bool sensorIsMultiSensor= false;
 static bool videoStreamActive= false;
 static int32_t valsPerFrame= 0;
-int g_SubSampleRate = 200; // 采样率是g_SubSampleRate/20 000
-int g_IRIMinLength = 10; //每次计算iri需要的最小里程,单位m
-double g_RIRMinDX=0.1; //采样间隔dx 单位m
+int g_SubSampleRate = 200; // 采样率是g_SubSampleRate/20 000  计算0.1m需要多少个点。
+int g_IRILength = 10; //每次计算iri需要的里程,单位m
+double g_IRIMeanDx=0.1; //0.1m输出一组平均高程值，采样间距小于0.01m
+double g_SMTDMaxSampleLength=2; //采样间隔dx不能超过2mm 
+
 
 #if defined (CHECK_MONOTONY)
 static int32_t counterIndex= -1;
@@ -62,7 +64,9 @@ class ILD2300_Infos_Buffer
 		std::vector<ILD2300_Info> infos_v;
 		double distance;
 		double v;	// m/s
-		bool isGPSInfoValid;
+		double frequency;
+		int subSampleRate;
+		bool isGPSInfoValid;		
 		~ILD2300_Infos_Buffer() {
 		}
 };
@@ -82,9 +86,7 @@ CString IRI_Info::toString()
 	tmp.Format(_T("IRI %-.3f m/km"), IRI_result); 
 	output += tmp;
 	tmp.Format(_T("，统计长度: %-.3f m"), IRI_length); 
-	output += tmp;
-	tmp.Format(_T("，统计间隔: %-.3f m"), dx); 
-	output += tmp;
+	output += tmp;	
 	tmp.Format(_T("，车速: %-.3f km/h"), v); 
 	output += tmp;
 
@@ -844,7 +846,7 @@ void calculateSubSampleRate(ILD2300_Infos_Buffer& infos_buffer, const int32_t& r
 	}
 
 
-	g_SubSampleRate = ceil(g_RIRMinDX * frequency / vPerSecond);
+	g_SubSampleRate = ceil(g_IRIMeanDx * frequency / vPerSecond);
 }
 
 /** Read continuous data from sensor and show each first frame at console
@@ -927,14 +929,16 @@ bool GetData (uint32_t sensorInstance)
 			getVelocityByGPS(oldGpsStr, infos_buffer.distance, infos_buffer.v, infos_buffer.isGPSInfoValid);
 
 			calculateSubSampleRate(infos_buffer, read, frequency);
+			infos_buffer.frequency = frequency;
+			infos_buffer.subSampleRate = g_SubSampleRate;
 
-			int count = ceil(double(read/valsPerFrame/g_SubSampleRate))+ 1;
+			int count = ceil(double(read/valsPerFrame))+ 1;
 			//printf("count：%d read: %d, g_SubSampleRate:%d isGPSInfoValid:%d v:%-.3f capacity:%d \r\n",
 				//count, read, g_SubSampleRate, infos_buffer.isGPSInfoValid, infos_buffer.v, ILD2300_infos_tmp.capacity());
 			ILD2300_infos_tmp.reserve(read);
 			
 			//每隔g_SubSampleRate数据采样一次
-			for (int32_t i = indexDistance1; i < read && (i+ valsPerFrame*g_SubSampleRate) < read; i+= (valsPerFrame*g_SubSampleRate))
+			for (int32_t i = indexDistance1; i < read; i+= valsPerFrame)
 				{
 				//ClearLine();
 				ILD2300_Info tmp_info;
@@ -953,7 +957,7 @@ bool GetData (uint32_t sensorInstance)
 				}
 
 				//printf(", TS %.3f", timestamp);
-				tmp_info.timestamp = timestamp; // 这个是最老的那个点的时间。暂时每个点都记录下时间。
+				//tmp_info.timestamp = timestamp; // 这个是最老的那个点的时间。暂时每个点都记录下时间。
 
 				ILD2300_infos_tmp.push_back(tmp_info);
 				}
@@ -990,16 +994,16 @@ void getDistances(std::vector<double>* distances, double& v, double& total_dista
 		int count = tmp_v.size();
 		for (int j = 0; j < count;j++)
 		{
-			distances->push_back(double(tmp_v[j].scaledData/1000)); //mm转换成m
+			distances->push_back(double(tmp_v[j].scaledData)); 
 		}
 
-		if (total_distance >= g_IRIMinLength){	
-			v = (total_time == 0) ?   0 : total_distance/total_time;
+		if (total_distance >= g_IRILength){	
+			v = (total_time == 0) ?   0.01 : total_distance/total_time;
 			break;
 		}
 	}
 
-	v = total_time == 0 ?  0 : total_distance/total_time;
+	v = total_time == 0 ?  0.01 : total_distance/total_time;
 }
 
 
@@ -1011,8 +1015,8 @@ boolean isDataEnough()
 		it != g_ILD2300_infos_buffer.end(); ++it)
 	{
 		count += it->distance;
-		//保证有g_IRIMinLength米数据
-		if (count > g_IRIMinLength)
+		//保证有g_IRILength米数据
+		if (count > g_IRILength)
 			return true;
 	}
 
@@ -1083,8 +1087,7 @@ void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_resu
 */
 UINT processILD2300InfosThread(LPVOID lparam)
 {
-	double dx = g_RIRMinDX;
-
+	
 	while (1) {		
 		Sleep(300); // 暂停
 		
@@ -1103,39 +1106,60 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		criticalSectionILD2300.Unlock();
 
 
-		//printf("ild2300 queue size %d,  dx: (%-.3f)  distances.size: %d  \n\r", g_ILD2300_infos_buffer.size(), dx, distances.size());
-		
 
-		double IRI_length = 0.0;
-		double IRI_result = 0.0;
-		iri(distances, dx, v, &IRI_length, &IRI_result);		
-		//printf("IRI_length:%-.3f IRI_result:%-.3f", IRI_length, IRI_result);	
-
+		//计算SMTD
+		double sampleLength =  total_distance * 1000 /distances.size();
+		//采样间距要小于0.002m
+		if (sampleLength > g_SMTDMaxSampleLength)
+		{
+			printf("ERROR:SMTD sample length > 2mm: %-.3f", sampleLength);
+		}
 
 		double SMTD = 0.0;
-
-		int L = 10000; //mm  TODO:安装1mm算个假的先。先把值输出出来。
-		int D = 300; //mm
-		int l = 1; //  mm 采样间距小于2mm  TODO:就当数据是2mm采样的。
-
-		for (int i=0; i<distances.size(); i++)
-		{
-			distances[i] = distances[i]*1000;//单位转换成mm
-		}
-
-		//TODO：暂时先构造一些假数据
-		while(distances.size() < 10000)
-		{
-			distances.insert(distances.end(), distances.begin(), distances.end());
-		}
+		double L = total_distance * 1000; //10m输出平均SMTD值。
+		double D = 300; // 300mm 统计一次SMTD值
+		double l = sampleLength; //  mm 采样间距小于2mm
 		
 		calculateSMTDs(L ,D, l, distances, SMTD);
 
 
+		std::vector<double> IRIdistances;
+		int pointCount = g_IRIMeanDx/sampleLength; //求0.1m内平均高程点数
+		pointCount = pointCount == 0 ? 1 : pointCount; //保证pointCount>0
+
+		int size = distances.size();
+		int k = 0;
+		double total=0;
+		for (int i = 0; i < size; i++)
+		{
+			
+			k++;
+			total += distances[i];		
+			
+			if(k == pointCount)		
+			{
+				IRIdistances.push_back(total/pointCount/1000); //取0.1m内平均高程，并且将单位转换成m
+				k = 0; total =0;
+			}
+
+			//将超过pointCount整数倍后的数据求平均高程。
+			if (i == size -1 && total >0)
+			{
+				int loop = size%pointCount;
+				IRIdistances.push_back(total/loop/1000);
+			}
+		}
 
 
+		//计算IRI
+		double IRI_length = 0.0;
+		double IRI_result = 0.0;
+		iri(IRIdistances, g_IRIMeanDx, v, &IRI_length, &IRI_result);		
+
+
+		//整理打印数据
 		IRI_Info iriInfo;
-		getIRIInfo(iriInfo, dx, total_distance, IRI_result, v, SMTD);
+		getIRIInfo(iriInfo, g_IRIMeanDx, total_distance, IRI_result, v, SMTD);
 
 		criticalSectionIRI.Lock();
 		if (IRI_infos.size() >= 10)

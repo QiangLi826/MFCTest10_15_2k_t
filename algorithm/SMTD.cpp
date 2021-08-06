@@ -44,7 +44,7 @@ int readCsv(vector<double> *incsv)
 */
 void calculateSMTD(int n, std::vector<double>& incsv, int j, double* x, double* smtd)
 {
-    int o = 0; int p = 0; int q = 0; int sum = 0;
+    double o = 0; double p = 0; double q = 0; double sum = 0;
     for (int i = 0; i < n; i++)
     {
         o = o + incsv[i + n * j];
@@ -76,9 +76,7 @@ void calculateSMTD_mean(int J, double* smtd, int Jv, double* SMTD)
 // l=input('请输入采样间距：');  单位：mm
 int calculateSMTDs(double L, double D, double l, vector<double>& incsv, double& SMTD)
 { 
-
-	//四舍五入
-    int m = int((double)D / l + 0.5) + 1;
+    int m = D / l;
 
     if (m < 151)
         printf("纵断面取样数据不足，请修改相关数据。\n"); //判断每段计算长度内的采样个数
