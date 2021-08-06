@@ -56,7 +56,7 @@ void calculateSMTD(int n, std::vector<double>& incsv, int j, double* x, double* 
 
     *smtd = pow(((n * p - pow((double)o, 2) - (12 * pow((double)sum, 2) + P) / (pow((double)n, 2) - 1)) / pow((double)n, 2)), 0.5);
 
-    printf("第%d段计算长度内构造深度值smtd=%f\n", j, *smtd);
+    //printf("第%d段计算长度内构造深度值smtd=%f\n", j, *smtd);
 }
 
 
