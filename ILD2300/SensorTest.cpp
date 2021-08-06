@@ -917,8 +917,9 @@ bool GetData (uint32_t sensorInstance)
 
 			calculateSubSampleRate(infos_buffer, read, frequency);
 
-			int count = ceil(double(read/valsPerFrame/g_SubSampleRate))+ 1; // TODO:观察这里到底什么问题。
-			printf("count：%d read: %d, g_SubSampleRate:%d", count, valsPerFrame, g_SubSampleRate);
+			int count = ceil(double(read/valsPerFrame/g_SubSampleRate))+ 1;
+			printf("count：%d read: %d, g_SubSampleRate:%d isGPSInfoValid:%d v:%-.3f \r\n",
+				count, read, g_SubSampleRate, infos_buffer.isGPSInfoValid, infos_buffer.v);
 			ILD2300_infos_tmp.reserve(read);
 			
 			//每隔g_SubSampleRate数据采样一次

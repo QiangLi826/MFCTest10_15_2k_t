@@ -21,9 +21,10 @@ GPS_Info::GPS_Info(CString tmp)
 	}
 	isGPSFormatValid = true;
 		//ÎÞÐ§½â
-	if (gpsStrArray.GetAt(15)=='0' )
+	if (gpsStrArray.GetAt(15)=='0' ){
 		isGPSInfoValid = false;
-	
+		return;
+	}
 	
 	x = atof(gpsStrArray.GetAt(12));
 	y = atof(gpsStrArray.GetAt(13));

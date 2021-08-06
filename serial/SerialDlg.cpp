@@ -25,7 +25,7 @@ CString g_lastGpsStr='\0';    //上一个
 CString g_currentGpsStr='\0'; //当前的。
 CCriticalSection criticalSectionGPSStr;
 
-CString g_BufferStr;    //上一个
+CString g_BufferStr;    //采集到的gps信息有可能是被截断的，此buffer用于拼接成完整数据。
 
 
 //false为零， true为1。有些误差没有关系。不用加锁。
@@ -283,6 +283,13 @@ void SerialDlg::updateGlobalGpsData(char  buffer[1024])
 		//最后一个无效
 		else
 		{
+			//无效也要刷成无效的，否则另外的线程计算的车速就是错误的。
+			criticalSectionGPSStr.Lock();
+			g_lastGpsStr = '\0';
+			g_lastGpsStr += g_currentGpsStr;
+			g_currentGpsStr = '\0';
+			criticalSectionGPSStr.Unlock();
+
 			//最后一个格式正确，但是无效解
 			if (isTheLastGPSFormatValid)
 			{
