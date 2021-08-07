@@ -96,9 +96,16 @@ void GPS_Info::getVelocity(double& v, double distance, GPS_Info& lastGps, GPS_In
 	double time = currentGps.time >=
 		lastGps.time ? (currentGps.time - lastGps.time) : (currentGps.time + 5184000 - lastGps.time);
 
-	v = (time == 0.0 )? 0.0 : distance / time;
+	v = (time < 0.001 )? 0.0 : distance / time;
 	
 }
 
+//¼ÆËãËÙ¶È
+double GPS_Info::getTimeDifference(double& timeDiff, GPS_Info& lastGps, GPS_Info &currentGps)
+{
+	timeDiff = currentGps.time >=
+		lastGps.time ? (currentGps.time - lastGps.time) : (currentGps.time + 5184000 - lastGps.time);
+	return timeDiff;
+}
 
 

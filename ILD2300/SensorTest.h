@@ -1,5 +1,5 @@
 UINT enter_ild2300 (LPVOID lpParamter);
-
+#define INVALID_VELOCITY_FRESH_CYCLE 50000//随便设置的一个大数，gps开启的情况下，不使用默认速度。
 
 class IRI_Info
 {

@@ -9,6 +9,7 @@
 #include "PropertiesDlg.h"
 #include "GPS_Info.h"
 #include <cmath>
+#include "../ILD2300/SensorTest.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -21,16 +22,32 @@ static char THIS_FILE[] = __FILE__;
 int Ascii2Hex(char* ascii, char* hex);
 int Hex2Ascii(char* hex, char* ascii);
 
-CString g_lastGpsStr='\0';    //上一个
 CString g_currentGpsStr='\0'; //当前的。
+double g_Velocity=0; 
 CCriticalSection criticalSectionGPSStr;
-
-CString g_BufferStr;    //采集到的gps信息有可能是被截断的，此buffer用于拼接成完整数据。
-
 
 //false为零， true为1。有些误差没有关系。不用加锁。
 boolean g_isGPSOpen = false;
+int g_VelocityFreshCyclePass=INVALID_VELOCITY_FRESH_CYCLE ; //速度过去了多少个GPS周期。
 
+class Velocity_Buffer
+{
+
+	public:
+		Velocity_Buffer() {
+		}
+	
+		double distance; 
+		double timeDiff;	
+		~Velocity_Buffer() {
+		}
+};
+#include <deque>
+#define MAX_Velocity_Buffer	15
+std::deque<Velocity_Buffer> gqVelocity_Buffer;
+
+
+CString g_BufferStr;    //采集到的gps信息有可能是被截断的，此buffer用于拼接成完整数据。
 
 SerialDlg::SerialDlg(int iInstance, CWnd* pParent /*=NULL*/)
 : CDialog(SerialDlg::IDD, pParent), iInstance_(iInstance)
@@ -243,14 +260,19 @@ void SerialDlg::OnDestroy()
 //更新gps数据
 void SerialDlg::updateGlobalGpsData(char  buffer[1024])
 {
+	
+	g_VelocityFreshCyclePass++;
+
 	//传输的字符不一定在哪里截断，数据长度也不一定。
 	CStringArray gpsBufferArray;
 	g_BufferStr += buffer;
 	GPS_Info::SplitStr(g_BufferStr, "\r\n", gpsBufferArray);
 	if (gpsBufferArray.GetSize() >= 2)
 	{
-		bool isFindValid = false;
+		bool isFindValid = false; // gps信息是否有效。
 		bool isTheLastGPSFormatValid = false; //最后一个数据是否格式正确
+		bool isFreshVelocityBuffer = false;
+
 		int i = gpsBufferArray.GetSize() - 1;
 		for (i; i >= 0; i--)
 		{
@@ -263,14 +285,52 @@ void SerialDlg::updateGlobalGpsData(char  buffer[1024])
 			}
 			//格式正确，并且不是无效解
 			if (gps_t.isGPSInfoValid)
-			{
+			{		
+				double distance;
+				double v;
+				double timeDiff;
+				GPS_Info lastGps(g_currentGpsStr);
+				if (lastGps.isGPSInfoValid)
+				{
+					GPS_Info::getDistance(distance, lastGps, gps_t);
+					GPS_Info::getTimeDifference(timeDiff, lastGps, gps_t);
+
+					//将几个周期的gps缓存起来求平均值。
+					Velocity_Buffer v_buffer;
+					v_buffer.distance = distance;
+					v_buffer.timeDiff = timeDiff;
+					int size = gqVelocity_Buffer.size();
+					
+					if (size >= MAX_Velocity_Buffer)
+					{
+						gqVelocity_Buffer.pop_front();
+					}
+					gqVelocity_Buffer.push_back(v_buffer);
+					isFreshVelocityBuffer = true;
+
+					size = gqVelocity_Buffer.size();
+					double total_distance=0;
+					double total_time=0;
+					for (int i = 0; i < size; i++)
+					{
+						total_distance += gqVelocity_Buffer[i].distance;
+						total_time += gqVelocity_Buffer[i].timeDiff;
+					}
+					v = total_time < 0.001 ? 0 : total_distance/total_time;
+				}
+				
+
 				criticalSectionGPSStr.Lock();
-				g_lastGpsStr = '\0';
-				g_lastGpsStr += g_currentGpsStr;
+				if (lastGps.isGPSInfoValid)
+				{
+					g_Velocity = v;
+					g_VelocityFreshCyclePass = 0;
+				}
+			
 				g_currentGpsStr = '\0';
 				g_currentGpsStr += temp;
 				criticalSectionGPSStr.Unlock();
-				isFindValid = true;
+				isFindValid = true;				
 				break;
 			}
 		}
@@ -283,13 +343,6 @@ void SerialDlg::updateGlobalGpsData(char  buffer[1024])
 		//最后一个无效
 		else
 		{
-			//无效也要刷成无效的，否则另外的线程计算的车速就是错误的。
-			criticalSectionGPSStr.Lock();
-			g_lastGpsStr = '\0';
-			g_lastGpsStr += g_currentGpsStr;
-			g_currentGpsStr = '\0';
-			criticalSectionGPSStr.Unlock();
-
 			//最后一个格式正确，但是无效解
 			if (isTheLastGPSFormatValid)
 			{
@@ -299,6 +352,21 @@ void SerialDlg::updateGlobalGpsData(char  buffer[1024])
 			{
 				g_BufferStr = gpsBufferArray.GetAt(gpsBufferArray.GetSize() - 1);
 			}
+		}
+
+		//保存最近MAX_Velocity_Buffer周期,
+		if (!isFreshVelocityBuffer)
+		{
+			Velocity_Buffer v_buffer;
+			v_buffer.distance = 0;
+			v_buffer.timeDiff = 0;
+			int size = gqVelocity_Buffer.size();
+					
+			if (size >= MAX_Velocity_Buffer)
+			{
+				gqVelocity_Buffer.pop_front();
+			}
+			gqVelocity_Buffer.push_back(v_buffer);
 		}
 	}
 }
@@ -463,9 +531,10 @@ void SerialDlg::OnButtonOpen()
 		for (int i = 0; i<sizeof(item_id)/sizeof(WORD); i++) 
 			GetDlgItem(item_id[i])->EnableWindow(!GetDlgItem(item_id[i])->IsWindowEnabled());
 
-		g_isGPSOpen = false;
-		g_lastGpsStr='\0';   
+		g_isGPSOpen = false;	
 		g_currentGpsStr='\0';
+		g_Velocity = 0;
+		int g_VelocityFreshCyclePass=INVALID_VELOCITY_FRESH_CYCLE ;
 	}
 	
 	

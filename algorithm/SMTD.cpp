@@ -78,8 +78,8 @@ int calculateSMTDs(double L, double D, double l, vector<double>& incsv, double& 
 { 
     int m = D / l;
 
-    if (m < 151)
-        printf("纵断面取样数据不足，请修改相关数据。\n"); //判断每段计算长度内的采样个数
+    //if (m < 151)
+        //printf("纵断面取样数据不足，请修改相关数据。\n"); //判断每段计算长度内的采样个数
 
     int J = floor((double)(L / D));
 

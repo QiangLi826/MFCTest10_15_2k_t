@@ -31,7 +31,6 @@ static bool sensorIsMEBUS= false;
 static bool sensorIsMultiSensor= false;
 static bool videoStreamActive= false;
 static int32_t valsPerFrame= 0;
-int g_SubSampleRate = 200; // 采样率是g_SubSampleRate/20 000  计算0.1m需要多少个点。
 int g_IRILength = 10; //每次计算iri需要的里程,单位m
 double g_IRIMeanDx=0.1; //0.1m输出一组平均高程值，采样间距小于0.01m
 double g_SMTDMaxSampleLength=2; //采样间隔dx不能超过2mm 
@@ -65,7 +64,6 @@ class ILD2300_Infos_Buffer
 		double distance;
 		double v;	// m/s
 		double frequency;
-		int subSampleRate;
 		bool isGPSInfoValid;		
 		~ILD2300_Infos_Buffer() {
 		}
@@ -131,11 +129,11 @@ std::deque<ILD2300_Infos_Buffer> g_ILD2300_infos_buffer;
 CCriticalSection criticalSectionILD2300;
 
 
-
-extern CString g_lastGpsStr;
 extern CString g_currentGpsStr;
 extern CCriticalSection criticalSectionGPSStr;
 extern boolean g_isGPSOpen;
+extern double g_Velocity; 
+extern int g_VelocityFreshCyclePass;
 #define INVALID_VALUE	0.0
 
 
@@ -767,50 +765,24 @@ void pushILD2300Info(ILD2300_Infos_Buffer& infos_buffer)
 
 
 //计算速度和距离 By GPS
-void getVelocityByGPS(CString& oldGpsStr, double& distance, double& v, bool& isGPSInfoValid)
+void getVelocityByGPS(double& distance, double& v, bool& isGPSInfoValid)
 {	
 	//gps功能是否打开
-	if (!g_isGPSOpen)
+	if (!g_isGPSOpen || g_VelocityFreshCyclePass >= INVALID_VELOCITY_FRESH_CYCLE)
 	{
 		distance = INVALID_VALUE;
 		v = INVALID_VALUE;
 		isGPSInfoValid = false;
 
-		//重置，防止gps开关再打开使用很久以前的数据。
-		oldGpsStr = '\0';
 		return;
 	}
 
-	CString newGpsStr;
 	criticalSectionGPSStr.Lock();
-	newGpsStr += g_currentGpsStr;
+	v = g_Velocity;
 	criticalSectionGPSStr.Unlock();
 
 	
-	GPS_Info currentGps(newGpsStr);
-	GPS_Info lastGps(oldGpsStr);
 
-	//如果两个gps数据中有一个数据无效，那么本次计算就不使用gps计算速度。
-	if (!currentGps.isGPSInfoValid || !lastGps.isGPSInfoValid) 
-	{
-		distance = INVALID_VALUE;
-		v = INVALID_VALUE;
-		isGPSInfoValid = false;
-
-		oldGpsStr = '\0';
-		oldGpsStr = newGpsStr;
-		//这里不用重置oldGpsStr
-		//可能是gps开关打开间隙，还没有采集到数据;
-		//也有可能是因为gps获取到的本身就是无效数据。
-		//oldGpsStr = '\0';
-		return;
-	}
-
-
-
-	GPS_Info::getDistance(distance, lastGps, currentGps);
-	GPS_Info::getVelocity(v, distance, lastGps, currentGps);
-	
 	// 保证速度不小于0.01m/s 
 	if (v < 0.01)
 	{
@@ -818,24 +790,23 @@ void getVelocityByGPS(CString& oldGpsStr, double& distance, double& v, bool& isG
 	}
 
 	isGPSInfoValid = true;
-	oldGpsStr = '\0';
-	oldGpsStr = newGpsStr;
+	
 }
 
-//根据车速计算采样频率
-void calculateSubSampleRate(ILD2300_Infos_Buffer& infos_buffer, const int32_t& read, double frequency)
+//根据车速计算频率和行车距离
+void calculateDistance(ILD2300_Infos_Buffer& infos_buffer, const int32_t& read, double frequency)
 {
-	//int frequency = 10000; // 目前点激光采集频率是20KHz	
 	//第一个数据过来的时候频率为0，
 	if (frequency == 0)
 	{
-		frequency = 10000;
+		frequency = 10000;// 目前点激光采集频率是20KHz	
 	}
 
 	double vPerSecond;
 	if (infos_buffer.isGPSInfoValid)
 	{
 		vPerSecond = infos_buffer.v;
+		infos_buffer.distance = read * vPerSecond / valsPerFrame / frequency;
 	}
 	else
 	{
@@ -845,8 +816,6 @@ void calculateSubSampleRate(ILD2300_Infos_Buffer& infos_buffer, const int32_t& r
 		infos_buffer.distance = read * vPerSecond / valsPerFrame / frequency;
 	}
 
-
-	g_SubSampleRate = ceil(g_IRIMeanDx * frequency / vPerSecond);
 }
 
 /** Read continuous data from sensor and show each first frame at console
@@ -866,13 +835,7 @@ bool GetData (uint32_t sensorInstance)
 		if (scaledData) { delete []scaledData; scaledData= nullptr;	}
 		printf ("GetData: Could not allocate buffer\n");
 		}
-
-	//初始化
-	CString oldGpsStr='\0';	
-	criticalSectionGPSStr.Lock();
-	oldGpsStr += g_currentGpsStr;
-	criticalSectionGPSStr.Unlock();
-
+	
 	while (1)
 		{			
 
@@ -915,53 +878,37 @@ bool GetData (uint32_t sensorInstance)
 #endif	
 		if (OutputTimeReached (sensorInstance))
 			{
-			//ClearLine();
-			//printf ("[%5d/%5d] \n\r", read, avail);
-
+		
 			ILD2300_Infos_Buffer infos_buffer;
 			std::vector<ILD2300_Info> &ILD2300_infos_tmp = infos_buffer.infos_v; //或者使用BufSize
 			
-			//如果采集够快可以达到gps速度和点激光采样数据实时。
-			//有gps，按照平均车速计算采样率。两次GPS数据分别取上一轮采集点激光数据时获取gps数据和当前的值gps数据
-			//	（这个数据再给下一轮用）。两次gps数据有一次无效就按照没有gps处理。
-			//没有gps, 按照20km/h计算采样率 g_SubSampleRate和，
+			
+			getVelocityByGPS(infos_buffer.distance, infos_buffer.v, infos_buffer.isGPSInfoValid);
 
-			getVelocityByGPS(oldGpsStr, infos_buffer.distance, infos_buffer.v, infos_buffer.isGPSInfoValid);
-
-			calculateSubSampleRate(infos_buffer, read, frequency);
+			calculateDistance(infos_buffer, read, frequency);
 			infos_buffer.frequency = frequency;
-			infos_buffer.subSampleRate = g_SubSampleRate;
 
-			int count = ceil(double(read/valsPerFrame))+ 1;
-			//printf("count：%d read: %d, g_SubSampleRate:%d isGPSInfoValid:%d v:%-.3f capacity:%d \r\n",
-				//count, read, g_SubSampleRate, infos_buffer.isGPSInfoValid, infos_buffer.v, ILD2300_infos_tmp.capacity());
+			int count = ceil(double(read/valsPerFrame))+ 1;			
 			ILD2300_infos_tmp.reserve(read);
 			
-			//每隔g_SubSampleRate数据采样一次
+			
 			for (int32_t i = indexDistance1; i < read; i+= valsPerFrame)
 				{
-				//ClearLine();
+			
 				ILD2300_Info tmp_info;
 				if (scaledData[i] == -DBL_MAX) // MEDAQLib default error value
 				{
 					printf("%u (error value)", static_cast<uint32_t>(rawData[i]));
-					//tmp_info.rawData = static_cast<uint32_t>(rawData[i]);
-					//tmp_info.scaledData = scaledData[i];
+					
 					continue;
 				}
 				else
-				{
-					//printf("%u (%-.3f)", static_cast<uint32_t>(rawData[i]), scaledData[i]);
-					//tmp_info.rawData = static_cast<uint32_t>(rawData[i]);
+				{					
 					tmp_info.scaledData = scaledData[i];				
 				}
 
-				//printf(", TS %.3f", timestamp);
-				//tmp_info.timestamp = timestamp; // 这个是最老的那个点的时间。暂时每个点都记录下时间。
-
 				ILD2300_infos_tmp.push_back(tmp_info);
 				}
-
 			
 			pushILD2300Info(infos_buffer);
 #if !defined(_WIN32)
@@ -1112,7 +1059,7 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		//采样间距要小于0.002m
 		if (sampleLength > g_SMTDMaxSampleLength)
 		{
-			printf("ERROR:SMTD sample length > 2mm: %-.3f", sampleLength);
+			//printf("ERROR:SMTD sample length > 2mm: %-.3f \n", sampleLength);
 		}
 
 		double SMTD = 0.0;
