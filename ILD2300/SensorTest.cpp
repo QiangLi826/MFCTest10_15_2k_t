@@ -1016,7 +1016,7 @@ void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_resu
 	iriInfo.dx = dx;
 	iriInfo.IRI_length = IRI_length;
 	iriInfo.IRI_result = IRI_result;
-	iriInfo.v = v;
+	iriInfo.v = v * 3600 / 1000;
 	iriInfo.IRI_result_100m_average = 0.0;
 	iriInfo.IRI_result_320m_average = 0.0;
 	iriInfo.SMTD_result = SMTD;
