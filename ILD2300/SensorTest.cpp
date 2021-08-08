@@ -122,7 +122,7 @@ std::deque<IRI_Info> IRI_infosRaw;
 
 
 
-#define MAX_ILD2300_Infos_Buffer	400
+#define MAX_ILD2300_Infos_Buffer	200
 //distance在返回数据结构中的索引
 uint32_t indexDistance1 = 0;
 std::deque<ILD2300_Infos_Buffer> g_ILD2300_infos_buffer;
@@ -789,6 +789,13 @@ void getVelocityByGPS(double& distance, double& v, bool& isGPSInfoValid)
 		v = 0.01;
 	}
 
+	//测试时，gps数据有时不准确，得到的值有可能很夸张。 速度太快可能导致队列数据积压。
+	// 55m/s=200km/h
+	if (v > 55)
+	{
+		v = 55;
+	}
+
 	isGPSInfoValid = true;
 	
 }
@@ -929,6 +936,7 @@ void getDistances(std::vector<double>* distances, double& v, double& total_dista
 {
 	int size = g_ILD2300_infos_buffer.size();	
 	double total_time=0; 
+	//printf("ERROR:size: %d \n", size);
 
 	for(int i=0; i < size; i++)
 	{
@@ -1100,7 +1108,7 @@ UINT processILD2300InfosThread(LPVOID lparam)
 {
 	
 	while (1) {		
-		Sleep(300); // 暂停
+		Sleep(50); // 暂停
 		
 		criticalSectionILD2300.Lock();
 		
