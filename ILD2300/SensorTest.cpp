@@ -883,6 +883,7 @@ bool GetData (uint32_t sensorInstance)
 			std::vector<ILD2300_Info> &ILD2300_infos_tmp = infos_buffer.infos_v; //或者使用BufSize
 			
 			
+
 			getVelocityByGPS(infos_buffer.distance, infos_buffer.v, infos_buffer.isGPSInfoValid);
 
 			calculateDistance(infos_buffer, read, frequency);
