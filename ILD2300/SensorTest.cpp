@@ -811,7 +811,7 @@ void calculateDistance(ILD2300_Infos_Buffer& infos_buffer, const int32_t& read, 
 	else
 	{
 		// GPS无效的情况下，默认行车速度为20km/h
-		vPerSecond = 20 * 1000 / 3600; // m/s
+		vPerSecond = 20. * 1000 / 3600; // m/s
 		infos_buffer.v = vPerSecond;
 		infos_buffer.distance = read * vPerSecond / valsPerFrame / frequency;
 	}
