@@ -934,18 +934,51 @@ void getDistances(std::vector<double>* distances, double& v, double& total_dista
 	{
 		ILD2300_Infos_Buffer info_buffer = g_ILD2300_infos_buffer.front();
 		std::vector<ILD2300_Info> tmp_v = info_buffer.infos_v; 
-		g_ILD2300_infos_buffer.pop_front();
+		
 
 		total_distance += info_buffer.distance;
 		total_time += info_buffer.distance/info_buffer.v;
 
-		int count = tmp_v.size();
+		//超出g_IRILength部分。
+		double distanceDiff = total_distance -  g_IRILength;
+		int count;
+		//精度控制在1%， 0.1/10
+		if (distanceDiff > 0.1)
+		{
+			count = (info_buffer.distance-distanceDiff)/info_buffer.distance * tmp_v.size();
+			//车速快的时候
+			if (count <= 0)
+			{
+				count = tmp_v.size();
+			}
+		}
+		else
+		{
+			count = tmp_v.size();
+		}
+
+		
 		for (int j = 0; j < count;j++)
 		{
 			distances->push_back(double(tmp_v[j].scaledData)); 
 		}
 
-		if (total_distance >= g_IRILength){	
+		bool is_break = false;
+		if(count < tmp_v.size())
+		{
+			// distanceDiff在车速快的时候不精确。 重新计算
+			info_buffer.distance = ((double)(tmp_v.size() - count)) / tmp_v.size() * info_buffer.distance; 
+			total_distance = total_distance - info_buffer.distance;
+			total_time = total_time - info_buffer.distance/info_buffer.v;		
+			tmp_v.erase(tmp_v.begin(),tmp_v.begin() + count -1);
+			is_break = true;
+		}
+		else
+		{
+			g_ILD2300_infos_buffer.pop_front();
+		}
+
+		if (total_distance >= g_IRILength || is_break){	
 			v = (total_time == 0) ?   0.01 : total_distance/total_time;
 			break;
 		}
