@@ -1030,6 +1030,36 @@ void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_resu
 }
 
 
+//转换成iri需要的高程数据。
+void getIRIDistances(double sampleLength, std::vector<double>& distances, std::vector<double>& IRIdistances)
+{
+	int pointCount = g_IRIMeanDx / sampleLength; //求0.1m内平均高程点数
+	pointCount = pointCount == 0 ? 1 : pointCount; //保证pointCount>0
+
+	int size = distances.size();
+	int k = 0;
+	double total = 0;
+	for (int i = 0; i < size; i++)
+	{
+
+		k++;
+		total += distances[i];
+
+		if (k == pointCount)
+		{
+			IRIdistances.push_back(total / pointCount / 1000); //取0.1m内平均高程，并且将单位转换成m
+			k = 0; total = 0;
+		}
+
+		//将超过pointCount整数倍后的数据求平均高程。
+		if (i == size - 1 && total >0)
+		{
+			int loop = size % pointCount;
+			IRIdistances.push_back(total / loop / 1000);
+		}
+	}
+}
+
 /**
 * 异步处理点激光数据
 */
@@ -1053,7 +1083,7 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		getDistances(&distances, v, total_distance);
 		criticalSectionILD2300.Unlock();
 
-
+		double SMTD = 0.0;
 
 		//计算SMTD
 		double sampleLength =  total_distance * 1000 /distances.size();
@@ -1062,8 +1092,7 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		{
 			//printf("ERROR:SMTD sample length > 2mm: %-.3f \n", sampleLength);
 		}
-
-		double SMTD = 0.0;
+		
 		double L = total_distance * 1000; //10m输出平均SMTD值。
 		double D = 300; // 300mm 统计一次SMTD值
 		double l = sampleLength; //  mm 采样间距小于2mm
@@ -1072,31 +1101,7 @@ UINT processILD2300InfosThread(LPVOID lparam)
 
 
 		std::vector<double> IRIdistances;
-		int pointCount = g_IRIMeanDx/sampleLength; //求0.1m内平均高程点数
-		pointCount = pointCount == 0 ? 1 : pointCount; //保证pointCount>0
-
-		int size = distances.size();
-		int k = 0;
-		double total=0;
-		for (int i = 0; i < size; i++)
-		{
-			
-			k++;
-			total += distances[i];		
-			
-			if(k == pointCount)		
-			{
-				IRIdistances.push_back(total/pointCount/1000); //取0.1m内平均高程，并且将单位转换成m
-				k = 0; total =0;
-			}
-
-			//将超过pointCount整数倍后的数据求平均高程。
-			if (i == size -1 && total >0)
-			{
-				int loop = size%pointCount;
-				IRIdistances.push_back(total/loop/1000);
-			}
-		}
+		getIRIDistances(sampleLength, distances, IRIdistances);
 
 
 		//计算IRI
