@@ -116,7 +116,7 @@ UINT calculateRDThread(LPVOID lparam)
 
 UINT main_scan(LPVOID lpParamter)
 {
-	//Sleep(1000);
+	Sleep(2000);
 	
 	//AfxBeginThread(&calculateRDThread, NULL);
 
