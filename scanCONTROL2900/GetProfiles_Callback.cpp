@@ -58,6 +58,29 @@ ProfileDataContext m_ProfileDataContext;
 std::deque<vector<double>> m_dqProfileSample; //profile采样后缓存队列
 CCriticalSection criticalSectionProfileSample;
 
+
+
+class RD_Info
+{
+
+	public:
+		RD_Info() {
+		}	
+		int kind; 
+		double RD1;		
+		double RD2;	
+		~RD_Info() {
+		}
+};
+
+
+#define MAX_RD_INFO_LENGTH 100
+std::deque<RD_Info> m_dqRD_Info; //车辙深度缓存队列
+CCriticalSection criticalSectionRD_Info;
+
+
+
+
 //计算车辙深度线程
 UINT calculateRDThread(LPVOID lparam)
 {
@@ -99,11 +122,21 @@ UINT calculateRDThread(LPVOID lparam)
 
 		PyObject* pRetVal = PyEval_CallObject(pFunc, args);//调用函数
 		//PyArg_Parse取单个返回值
-		int kind=0;
-		double RD1 = 0;
-		double RD2 = 0;
-		PyArg_ParseTuple(pRetVal,"idd",&kind,&RD1, &RD2);
-		cout <<"chezhe----kind:" << kind << " RD1:"<< RD1 <<  " RD2:" << RD2 << "\n";		
+	
+		RD_Info rd_info;
+		PyArg_ParseTuple(pRetVal,"idd",&rd_info.kind, &rd_info.RD1, &rd_info.RD2);
+		//cout <<"chezhe----kind:" << rd_info.kind << " RD1:"<< rd_info.RD1 <<  " RD2:" << rd_info.RD2 << "\n";	
+
+		criticalSectionRD_Info.Lock();
+		if (m_dqRD_Info.size()<MAX_RD_INFO_LENGTH)
+		{
+			m_dqRD_Info.push_back(rd_info);
+		}
+		else
+		{
+			cout <<"m_dqRD_Info is full"  << "\n";
+		}
+		criticalSectionRD_Info.Unlock();
 	}
 
 	Py_Finalize();//调用Py_Finalize，这个根Py_Initialize相对应的。
@@ -112,7 +145,7 @@ UINT calculateRDThread(LPVOID lparam)
 
 UINT main_scan(LPVOID lpParamter)
 {
-	Sleep(5000);
+	//Sleep(2000);
 	
 	//AfxBeginThread(&calculateRDThread, NULL);
 
@@ -120,7 +153,7 @@ UINT main_scan(LPVOID lpParamter)
 	vector<DWORD> vdwResolutions(MAX_RESOULUTIONS);
 	unsigned int uiInterfaceCount = 0;
 	unsigned int uiExposureTime = 100;
-	unsigned int uiIdleTime = 3900;
+	unsigned int uiIdleTime = 400;
 	bool bLoadError = false;
 	int iRetValue = 0;
 	bool bOK = true;
@@ -287,7 +320,7 @@ UINT main_scan(LPVOID lpParamter)
 
 		if (bOK)
 		{
-			// 25HZ
+			// 200HZ
 			cout << "Set idle time to " << uiIdleTime << "\n";
 			if ((iRetValue = m_pLLT->SetFeature(FEATURE_FUNCTION_IDLE_TIME, uiIdleTime)) < GENERAL_FUNCTION_OK)
 			{
@@ -333,6 +366,9 @@ UINT main_scan(LPVOID lpParamter)
 
 void GetProfiles_Callback()
 {
+	//等一等 calculateRDThread python初始化。
+	Sleep(1000);
+
 	int iRetValue;
 	vector<double> vdValueX(m_uiResolution); // position
 	vector<double> vdValueZ(m_uiResolution); // distance
