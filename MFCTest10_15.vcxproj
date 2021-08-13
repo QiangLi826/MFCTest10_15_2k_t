@@ -75,7 +75,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalIncludeDirectories>D:\work\20210624project_roaddetect\thirdlib\eigen-3.2.10;$(ProjectDir);D:\work\dependency\include;D:\work\14400-3.6.5.33_SOFTWARE_Go2_SDK\include;D:\work\appending\glaux\include;$(PYLON_DEV_DIR)\include;D:\app\14400-3.6.5.33_SOFTWARE_Go2_SDK\14400-3.6.5.33_SOFTWARE_Go2_SDK\include;$(PYLON_ROOT)\include;$(PYLON_GENICAM_ROOT)\library\CPP\include;$(PYLONC_ROOT)\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\ProgramData\Miniconda3_32\include;D:\work\20210624project_roaddetect\thirdlib\eigen-3.2.10;$(ProjectDir);D:\work\dependency\include;D:\work\14400-3.6.5.33_SOFTWARE_Go2_SDK\include;D:\work\appending\glaux\include;$(PYLON_DEV_DIR)\include;D:\app\14400-3.6.5.33_SOFTWARE_Go2_SDK\14400-3.6.5.33_SOFTWARE_Go2_SDK\include;$(PYLON_ROOT)\include;$(PYLON_GENICAM_ROOT)\library\CPP\include;$(PYLONC_ROOT)\include</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <ResourceCompile>
@@ -84,11 +84,11 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>MEDAQLib.lib;go2.lib;glut32.lib;Opengl32.lib;Glu32.lib;PylonC_MD_vc100.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>python37.lib;python37_d.lib;MEDAQLib.lib;go2.lib;glut32.lib;Opengl32.lib;Glu32.lib;PylonC_MD_vc100.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalLibraryDirectories>D:\work\dependency\lib;D:\work\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32;D:\work\appending\glaux\lib;$(PYLON_DEV_DIR)lib\Win32;D:\work\appending\lib;D:\app\14400-3.6.5.33_SOFTWARE_Go2_SDK\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32\debug;$(PYLONC_ROOT)\lib\$(Platform);%(AdditionalLibraryDirectories);$(PYLON_ROOT)\lib\Win32;$(PYLON_GENICAM_ROOT)\library\CPP\Lib\Win32_i86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\ProgramData\Miniconda3_32\libs;D:\work\dependency\lib;D:\work\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32;D:\work\appending\glaux\lib;$(PYLON_DEV_DIR)lib\Win32;D:\work\appending\lib;D:\app\14400-3.6.5.33_SOFTWARE_Go2_SDK\14400-3.6.5.33_SOFTWARE_Go2_SDK\lib\win32\debug;$(PYLONC_ROOT)\lib\$(Platform);%(AdditionalLibraryDirectories);$(PYLON_ROOT)\lib\Win32;$(PYLON_GENICAM_ROOT)\library\CPP\Lib\Win32_i86</AdditionalLibraryDirectories>
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
       <StackCommitSize>1523712</StackCommitSize>
     </Link>

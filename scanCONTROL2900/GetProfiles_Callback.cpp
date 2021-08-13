@@ -18,7 +18,7 @@
 #include "scanControlDataTypes.h"
 #include <vector>
 #include <sstream>
-
+#include<Python.h>
 
 using namespace std;
 
@@ -61,27 +61,56 @@ CCriticalSection criticalSectionProfileSample;
 //计算车辙深度线程
 UINT calculateRDThread(LPVOID lparam)
 {
+	//根据环境设置pythonHome
+	Py_SetPythonHome(L"D:\\ProgramData\\Miniconda3_32");
+	Py_Initialize();//使用python之前，要调用Py_Initialize();这个函数进行初始化
+	PyRun_SimpleString("import sys"); /*调用python文件*/
+	PyRun_SimpleString("sys.path.append('./scanCONTROL2900/')");
+	PyObject * pModule = NULL;//声明变量
+	PyObject * pFunc = NULL;// 声明变量
+	pModule = PyImport_ImportModule("chezhe");//这里是要调用的文件名
+	pFunc= PyObject_GetAttrString(pModule, "get_RD");//这里是要调用的函数名
+
 	while (1) {		
 		Sleep(50); // 暂停
 		criticalSectionProfileSample.Lock();
 		int size = m_dqProfileSample.size();
-		if (size<=0){
-		
-			criticalSectionProfileSample.Unlock();
+		criticalSectionProfileSample.Unlock();
+		if (size<=0){		
 			continue;
 		}
-
 		
 		for (int i = 0; i<size; i++)
 		{
+			criticalSectionProfileSample.Lock();
 			vector<double> porfile = m_dqProfileSample.front();
 			m_dqProfileSample.pop_front();
+			criticalSectionProfileSample.Unlock();
 			cout <<"porfile.size:" << porfile.size() << "\n";
+
+
+			//double f[17] = {0, 5, -5, -15, -15, -12.47, -2.48, 7.5, 10, 8, 0, -7.96, -10, -10, -2.48, 5, 0};
+			PyObject* pyParams = PyList_New(0);           //初始化一个列表
+			for (int i = 0; i < 17; i++)
+
+			{
+				PyList_Append(pyParams, Py_BuildValue("d", porfile[i]));//列表添加元素值浮点数
+			}
+
+			PyObject* args = PyTuple_New(1);              //定义一个python变量
+			PyTuple_SetItem(args, 0, pyParams);			  // 变量格式转换成python格式
+
+			PyObject* pRetVal = PyEval_CallObject(pFunc, args);//调用函数
+			//PyArg_Parse取单个返回值
+			int kind=0;
+			double RD1 = 0;
+			double RD2 = 0;
+			PyArg_ParseTuple(pRetVal,"idd",&kind,&RD1, &RD2);
+			cout <<"chezhe----kind:" << kind << " RD1:"<< RD1 <<  " RD2:" << RD2 << "\n";
 		}
-		
-		criticalSectionProfileSample.Unlock();
-		
 	}
+
+	Py_Finalize();//调用Py_Finalize，这个根Py_Initialize相对应的。
 	return 0;
 }
 
@@ -89,6 +118,8 @@ UINT main_scan(LPVOID lpParamter)
 {
 	//Sleep(1000);
 	
+	//AfxBeginThread(&calculateRDThread, NULL);
+
 	vector<unsigned int> vuiInterfaces(MAX_INTERFACE_COUNT);
 	vector<DWORD> vdwResolutions(MAX_RESOULUTIONS);
 	unsigned int uiInterfaceCount = 0;
