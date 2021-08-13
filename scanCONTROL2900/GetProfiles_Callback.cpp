@@ -53,12 +53,41 @@ public:
 };
 ProfileDataContext m_ProfileDataContext;
 
+#define MAX_PROFILE_SAMPLE_LENGTH 100
+#include <deque>
+std::deque<vector<double>> m_dqProfileSample; //profile采样后缓存队列
+CCriticalSection criticalSectionProfileSample;
 
+//计算车辙深度线程
+UINT calculateRDThread(LPVOID lparam)
+{
+	while (1) {		
+		Sleep(50); // 暂停
+		criticalSectionProfileSample.Lock();
+		int size = m_dqProfileSample.size();
+		if (size<=0){
+		
+			criticalSectionProfileSample.Unlock();
+			continue;
+		}
+
+		
+		for (int i = 0; i<size; i++)
+		{
+			vector<double> porfile = m_dqProfileSample.front();
+			m_dqProfileSample.pop_front();
+			cout <<"porfile.size:" << porfile.size() << "\n";
+		}
+		
+		criticalSectionProfileSample.Unlock();
+		
+	}
+	return 0;
+}
 
 UINT main_scan(LPVOID lpParamter)
 {
-	//和ILD2300分开
-	//Sleep(25000);
+	//Sleep(1000);
 	
 	vector<unsigned int> vuiInterfaces(MAX_INTERFACE_COUNT);
 	vector<DWORD> vdwResolutions(MAX_RESOULUTIONS);
@@ -250,6 +279,7 @@ UINT main_scan(LPVOID lpParamter)
 
 		if (bOK)
 		{
+			AfxBeginThread(&calculateRDThread, NULL);
 			GetProfiles_Callback();
 		}
 
@@ -393,32 +423,30 @@ void OnError(const char* szErrorTxt, int iErrorValue)
 // Displays one profile
 void DisplayProfile(double* pdValueX, double* pdValueZ, unsigned int uiResolution)
 {
-	size_t tNumberSize;
+	int sampleCount = 17;
+	int sampleInterval = (uiResolution-1) / (sampleCount -1);
 
-	for (unsigned int i = 0; i < uiResolution; i+=100)
-	{
-		// Prints the X- and Z-values
-		tNumberSize = Double2Str(*pdValueX).size();
-		cout << "\r"
-			<< "Profiledata: X = " << *pdValueX++;
-		for (; tNumberSize < 8; tNumberSize++)
-		{
-			cout << " ";
-		}
-
-		tNumberSize = Double2Str(*pdValueZ).size();
-		cout << " Z = " << *pdValueZ++;
-		for (; tNumberSize < 8; tNumberSize++)
-		{
-			cout << " ";
-		}
-
-		// Somtimes wait a short time (only for display)
-		if (i % 8 == 0)
-		{
-			Sleep(10);
-		}
+	vector<double> porfile(sampleCount);
+	int count = 0;
+	for (unsigned int i = 0; i < uiResolution; i+=sampleInterval)
+	{		
+		porfile[count] = pdValueZ[i];
+		count++;
 	}
+
+	criticalSectionProfileSample.Lock();
+	if (m_dqProfileSample.size() < MAX_PROFILE_SAMPLE_LENGTH)
+	{
+		m_dqProfileSample.push_back(porfile);
+		cout <<"m_dqProfileSample.size:" << m_dqProfileSample.size() << "\n";
+	}
+	else
+	{
+		cout <<"m_dqProfileSample is full"  << "\n";
+	}
+	
+	criticalSectionProfileSample.Unlock();
+
 }
 
 // Displays the timestamp
