@@ -26,16 +26,39 @@ CInterfaceLLT* m_pLLT = NULL;
 unsigned int m_uiResolution = 0;
 TScannerType m_tscanCONTROLType = scanCONTROL2xxx;
 
-unsigned int m_uiNeededProfileCount = 10;
+unsigned int m_uiNeededProfileCount = 10;  //每个空闲队列存储profile数量。
 unsigned int m_uiReceivedProfileCount = 0;
 unsigned int m_uiProfileDataSize;
 HANDLE m_hProfileEvent = CreateEvent(NULL, true, false, "ProfileEvent");
-vector<unsigned char> m_vucProfileBuffer;
+
+
+#define PROFILE_BUFFER_SIZE 2
+
+class ProfileDataContext
+{
+public:
+	ProfileDataContext()
+	{		
+		full = CreateSemaphore (NULL, 0, 1,NULL);
+		//创建缓冲区空闲信号量
+		empty = CreateSemaphore (NULL, 1, 1, NULL);
+		bufIdx=0; 
+		count = 0;
+
+	}
+	vector<unsigned char> m_vucProfileBuffer[PROFILE_BUFFER_SIZE];
+	HANDLE full,empty;
+	int count;   //当前空闲队列有多少个profile
+	int bufIdx;  //指向空闲队列。
+};
+ProfileDataContext m_ProfileDataContext;
+
+
 
 UINT main_scan(LPVOID lpParamter)
 {
 	//和ILD2300分开
-	Sleep(25000);
+	//Sleep(25000);
 	
 	vector<unsigned int> vuiInterfaces(MAX_INTERFACE_COUNT);
 	vector<DWORD> vdwResolutions(MAX_RESOULUTIONS);
@@ -172,6 +195,8 @@ UINT main_scan(LPVOID lpParamter)
 				OnError("Error during SetResolution", iRetValue);
 				bOK = false;
 			}
+
+
 		}
 
 		if (bOK)
@@ -206,6 +231,7 @@ UINT main_scan(LPVOID lpParamter)
 
 		if (bOK)
 		{
+			// 25HZ
 			cout << "Set idle time to " << uiIdleTime << "\n";
 			if ((iRetValue = m_pLLT->SetFeature(FEATURE_FUNCTION_IDLE_TIME, uiIdleTime)) < GENERAL_FUNCTION_OK)
 			{
@@ -213,6 +239,14 @@ UINT main_scan(LPVOID lpParamter)
 				bOK = false;
 			}
 		}
+
+		// Resize the profile buffer to the estimated profile size
+		// one porfile : m_uiResolution * 64 		
+		for (int i=0 ; i<PROFILE_BUFFER_SIZE; i++)
+		{
+			m_ProfileDataContext.m_vucProfileBuffer[i].resize(m_uiResolution * 64 * m_uiNeededProfileCount);
+		}
+
 
 		if (bOK)
 		{
@@ -243,8 +277,8 @@ UINT main_scan(LPVOID lpParamter)
 void GetProfiles_Callback()
 {
 	int iRetValue;
-	vector<double> vdValueX(m_uiResolution);
-	vector<double> vdValueZ(m_uiResolution);
+	vector<double> vdValueX(m_uiResolution); // position
+	vector<double> vdValueZ(m_uiResolution); // distance
 
 	// Resets the event
 	ResetEvent(m_hProfileEvent);
@@ -256,10 +290,7 @@ void GetProfiles_Callback()
 	{
 		OnError("Error during RegisterCallback", iRetValue);
 		return;
-	}
-
-	// Resize the profile buffer to the estimated profile size
-	m_vucProfileBuffer.resize(m_uiResolution * 64 * m_uiNeededProfileCount);
+	}	
 
 	cout << "Enable the measurement\n";
 	if ((iRetValue = m_pLLT->TransferProfiles(NORMAL_TRANSFER, true)) < GENERAL_FUNCTION_OK)
@@ -268,64 +299,82 @@ void GetProfiles_Callback()
 		return;
 	}
 
-	cout << "Wait for one profile\n";
+	//cout << "Wait for one profile\n";
 
-	if (WaitForSingleObject(m_hProfileEvent, 1000) != WAIT_OBJECT_0)
-	{
-		cout << "Error getting profile over the callback \n\n";
-		return;
-	}
+	//if (WaitForSingleObject(m_hProfileEvent, 1000) != WAIT_OBJECT_0)
+	//{
+	//	cout << "Error getting profile over the callback \n\n";
+	//	return;
+	//}
 
-	cout << "Disable the measurement\n";
-	if ((iRetValue = m_pLLT->TransferProfiles(NORMAL_TRANSFER, false)) < GENERAL_FUNCTION_OK)
-	{
-		OnError("Error during TransferProfiles", iRetValue);
-		return;
-	}
+	//cout << "Disable the measurement\n";
+	//if ((iRetValue = m_pLLT->TransferProfiles(NORMAL_TRANSFER, false)) < GENERAL_FUNCTION_OK)
+	//{
+		//OnError("Error during TransferProfiles", iRetValue);
+		//return;
+	//}
+
 
 	// Test the size from the profile
-	if (m_uiProfileDataSize == m_uiResolution * 64)
-		cout << "Profile size is OK \n";
-	else
-	{
-		cout << "Profile size is wrong \n\n";
-		return;
+	//if (m_uiProfileDataSize == m_uiResolution * 64)
+	//	cout << "Profile size is OK \n";
+	//else
+	//{
+	//	cout << "Profile size is wrong \n\n";
+	//	return;
+	//}
+
+	//cout << m_uiReceivedProfileCount << " profiles have been received\n";
+
+	while(1){
+		WaitForSingleObject(m_ProfileDataContext.full, 6000);
+
+		int bufIdx = (m_ProfileDataContext.bufIdx + 1) % 2;
+
+		for (int i = 0; i < m_uiNeededProfileCount; i ++)
+		{
+			//cout << "Converting of profile data from the first reflection\n";
+			iRetValue = m_pLLT->ConvertProfile2Values(&m_ProfileDataContext.m_vucProfileBuffer[bufIdx][i*m_uiResolution * 64]
+			, m_uiResolution, PROFILE, m_tscanCONTROLType, 0, true, NULL, NULL, NULL, &vdValueX[0], &vdValueZ[0], NULL, NULL);
+			if (((iRetValue & CONVERT_X) == 0) || ((iRetValue & CONVERT_Z) == 0))
+			{
+				OnError("Error during Converting of profile data", iRetValue);
+				continue;
+			}
+
+			DisplayProfile(&vdValueX[0], &vdValueZ[0], m_uiResolution);
+		}		
+
+		ReleaseSemaphore(m_ProfileDataContext.empty,1,NULL); 
 	}
-
-	cout << m_uiReceivedProfileCount << " profiles have been received\n";
-
-	cout << "Converting of profile data from the first reflection\n";
-	iRetValue = m_pLLT->ConvertProfile2Values(&m_vucProfileBuffer[0], m_uiResolution, PROFILE, m_tscanCONTROLType, 0, true, NULL,
-		NULL, NULL, &vdValueX[0], &vdValueZ[0], NULL, NULL);
-	if (((iRetValue & CONVERT_X) == 0) || ((iRetValue & CONVERT_Z) == 0))
-	{
-		OnError("Error during Converting of profile data", iRetValue);
-		return;
-	}
-
-	DisplayProfile(&vdValueX[0], &vdValueZ[0], m_uiResolution);
-
-	cout << "\n\nDisplay the timestamp from the profile:";
-	DisplayTimestamp(&m_vucProfileBuffer[m_uiResolution * 64 - 16]);
+	//cout << "\n\nDisplay the timestamp from the profile:";
+	//DisplayTimestamp(&m_vucProfileBuffer[m_uiResolution * 64 - 16]);
 }
 
 // Callback function
 void __stdcall NewProfile(const unsigned char* pucData, unsigned int uiSize, void* pUserData)
 {
+	
+	//一次应该只传输一个porfile，一个porfile为uiSize
 	if (uiSize > 0)
 	{
-		if (m_uiReceivedProfileCount < m_uiNeededProfileCount)
+		if (m_ProfileDataContext.count < m_uiNeededProfileCount)
 		{
 			// If the needed profile count not arrived: copy the new Profile in the buffer and increase the recived buffer count
 			m_uiProfileDataSize = uiSize;
-			memcpy(&m_vucProfileBuffer[m_uiReceivedProfileCount * uiSize], pucData, uiSize);
-			m_uiReceivedProfileCount++;
+			memcpy(&m_ProfileDataContext.m_vucProfileBuffer[m_ProfileDataContext.bufIdx]
+			[m_ProfileDataContext.count * uiSize], pucData, uiSize);
+			m_ProfileDataContext.count++;
 		}
 
-		if (m_uiReceivedProfileCount >= m_uiNeededProfileCount)
+		if (m_ProfileDataContext.count >= m_uiNeededProfileCount)
 		{
 			// If the needed profile count is arived: set the event
-			SetEvent(m_hProfileEvent);
+			WaitForSingleObject(m_ProfileDataContext.empty,INFINITE);
+			m_ProfileDataContext.bufIdx = ++m_ProfileDataContext.bufIdx%2;
+			m_ProfileDataContext.count=0;
+			
+			ReleaseSemaphore(m_ProfileDataContext.full, 1, NULL); 
 		}
 	}
 	UNREFERENCED_PARAMETER(pUserData);
@@ -346,7 +395,7 @@ void DisplayProfile(double* pdValueX, double* pdValueZ, unsigned int uiResolutio
 {
 	size_t tNumberSize;
 
-	for (unsigned int i = 0; i < uiResolution; i++)
+	for (unsigned int i = 0; i < uiResolution; i+=100)
 	{
 		// Prints the X- and Z-values
 		tNumberSize = Double2Str(*pdValueX).size();
@@ -395,3 +444,5 @@ std::string Double2Str(double dValue)
 
 	return NewStreamApp.str();
 }
+
+
