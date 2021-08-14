@@ -938,7 +938,7 @@ void getDistances(std::vector<double>* distances, double& v, double& total_dista
 	for(int i=0; i < size; i++)
 	{
 		ILD2300_Infos_Buffer info_buffer = g_ILD2300_infos_buffer.front();
-		std::vector<ILD2300_Info> tmp_v = info_buffer.infos_v; 
+		std::vector<ILD2300_Info> *tmp_v = &(info_buffer.infos_v); 
 		
 
 		total_distance += info_buffer.distance;
@@ -950,32 +950,32 @@ void getDistances(std::vector<double>* distances, double& v, double& total_dista
 		//精度控制在1%， 0.1/10
 		if (distanceDiff > 0.1)
 		{
-			count = (info_buffer.distance-distanceDiff)/info_buffer.distance * tmp_v.size();
+			count = (info_buffer.distance-distanceDiff)/info_buffer.distance * tmp_v->size();
 			//车速快的时候
 			if (count <= 0)
 			{
-				count = tmp_v.size();
+				count = tmp_v->size();
 			}
 		}
 		else
 		{
-			count = tmp_v.size();
+			count = tmp_v->size();
 		}
 
 		
 		for (int j = 0; j < count;j++)
 		{
-			distances->push_back(double(tmp_v[j].scaledData)); 
+			distances->push_back(double(tmp_v->at(j).scaledData)); 
 		}
 
 		bool is_break = false;
-		if(count < tmp_v.size())
+		if(count < tmp_v->size())
 		{
 			// distanceDiff在车速快的时候不精确。 重新计算
-			info_buffer.distance = ((double)(tmp_v.size() - count)) / tmp_v.size() * info_buffer.distance; 
+			info_buffer.distance = ((double)(tmp_v->size() - count)) / tmp_v->size() * info_buffer.distance; 
 			total_distance = total_distance - info_buffer.distance;
 			total_time = total_time - info_buffer.distance/info_buffer.v;		
-			tmp_v.erase(tmp_v.begin(),tmp_v.begin() + count -1);
+			tmp_v->erase(tmp_v->begin(),tmp_v->begin() + count -1);
 			is_break = true;
 		}
 		else
