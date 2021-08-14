@@ -43,13 +43,13 @@ CString RD_Mean_Info::toString()
 
 	if (RD_result_100m_average > 0.0)
 	{
-		tmp.Format(_T("，100m平均IRI: %-.3f "), RD_result_100m_average); 
+		tmp.Format(_T("，100m平均RD: %-.3f "), RD_result_100m_average); 
 		output += tmp;
 	}
 
 	if (RD_result_200m_average > 0.0)
 	{
-		tmp.Format(_T("，320m平均IRI: %-.3f "), RD_result_200m_average); 
+		tmp.Format(_T("，200m平均RD: %-.3f "), RD_result_200m_average); 
 		output += tmp;
 	}
 	
