@@ -164,6 +164,7 @@
     <ClCompile Include="scanCONTROL2900\DllLoader.cpp" />
     <ClCompile Include="scanCONTROL2900\GetProfiles_Callback.cpp" />
     <ClCompile Include="scanCONTROL2900\InterfaceLLT_2.cpp" />
+    <ClCompile Include="scanCONTROL2900\RD_Info.cpp" />
     <ClCompile Include="serial\CnCommDlg.cpp" />
     <ClCompile Include="serial\CnHyperlink.cpp" />
     <ClCompile Include="serial\DcbDlg.cpp" />
@@ -205,6 +206,7 @@
     <ClInclude Include="scanCONTROL2900\DllLoader.h" />
     <ClInclude Include="scanCONTROL2900\GetProfiles_Callback.h" />
     <ClInclude Include="scanCONTROL2900\InterfaceLLT_2.h" />
+    <ClInclude Include="scanCONTROL2900\RD_Info.h" />
     <ClInclude Include="scanCONTROL2900\scanControlDataTypes.h" />
     <ClInclude Include="scanCONTROL2900\S_InterfaceLLT_2.h" />
     <ClInclude Include="serial\CnComm.h" />

@@ -105,6 +105,9 @@
     <ClCompile Include="serial\TimeoutsDlg.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="scanCONTROL2900\RD_Info.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ControlView.h">
@@ -222,6 +225,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="serial\TimeoutsDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scanCONTROL2900\RD_Info.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

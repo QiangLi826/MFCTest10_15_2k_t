@@ -19,6 +19,7 @@
 #include <vector>
 #include <sstream>
 #include<Python.h>
+#include "RD_Info.h"
 
 using namespace std;
 
@@ -60,23 +61,96 @@ CCriticalSection criticalSectionProfileSample;
 
 
 
-class RD_Info
-{
 
-	public:
-		RD_Info() {
-		}	
-		int kind; 
-		double RD1;		
-		double RD2;	
-		~RD_Info() {
-		}
-};
-
-
-#define MAX_RD_INFO_LENGTH 100
 std::deque<RD_Info> m_dqRD_Info; //车辙深度缓存队列
 CCriticalSection criticalSectionRD_Info;
+
+
+#define MAX_RD_MEAN_Info	100
+std::deque<RD_Mean_Info> m_dqRD_mean_info; //RD 10米平均统计值缓存，用于计算100米平均值和200米平均值。
+
+std::deque<RD_Mean_Info> m_dqRD_show;  //用于在界面上展示RD结果。
+CCriticalSection criticalSectionRD_show;
+
+
+
+//计算平均车辙深度线程
+UINT calculateMeanRDThread(LPVOID lparam)
+{	
+	while(1){
+		Sleep(100);
+
+		double RD1=0;		
+		double RD2=0;	
+		criticalSectionRD_Info.Lock();
+		int rd_size = m_dqRD_Info.size();
+		if (rd_size<=0)
+		{
+			criticalSectionRD_Info.Unlock();
+			continue;
+		}		
+
+		for (int i = 0; i < rd_size; i++)
+		{
+			RD1 += m_dqRD_Info.front().RD1;
+			RD2 += m_dqRD_Info.front().RD2;
+			m_dqRD_Info.pop_front();
+		}
+
+		RD1 = RD1/rd_size;
+		RD2 = RD2/rd_size;
+		criticalSectionRD_Info.Unlock();
+
+
+		RD_Mean_Info rd_mean;
+		rd_mean.RD1 = RD1;
+		rd_mean.RD2 = RD2;
+		rd_mean.RD = RD1 >= RD2 ? RD1 : RD2;
+		rd_mean.length = 10; //默认10米统计一次RD均值。
+
+		if (m_dqRD_mean_info.size() >= MAX_RD_MEAN_Info)
+		{
+			m_dqRD_mean_info.pop_front();
+		}
+		m_dqRD_mean_info.push_back(rd_mean);
+
+		double RD_length_total = 0.0;
+		double RD_result_total = 0.0;		
+		int count = 0;
+		for (int i = m_dqRD_mean_info.size() - 1; i >= 0; i--)
+		{
+			count += 1;
+			RD_Mean_Info temp = m_dqRD_mean_info.at(i);
+			RD_length_total += temp.length;
+			RD_result_total += temp.RD;
+		
+
+			// 统计长度大于100米（可以有误差）
+			if (rd_mean.RD_result_100m_average <= 0.0 && RD_length_total >= 100 * 0.98)
+			{
+				rd_mean.RD_result_100m_average = RD_result_total / count;
+			}			
+
+			// 统计长度大于200米（可以有误差）
+			if (rd_mean.RD_result_200m_average <= 0.0 && RD_length_total >= 200 * 0.98)
+			{
+				rd_mean.RD_result_200m_average = RD_result_total / count;
+				break;
+			}
+		}
+
+
+		criticalSectionRD_show.Lock();
+		if (m_dqRD_show.size() >= 10)
+		{
+			m_dqRD_show.pop_front();
+		}
+		m_dqRD_show.push_back(rd_mean);
+		criticalSectionRD_show.Unlock();
+
+	}
+	return 0;
+}
 
 
 
@@ -147,7 +221,9 @@ UINT main_scan(LPVOID lpParamter)
 {
 	//Sleep(2000);
 	
-	//AfxBeginThread(&calculateRDThread, NULL);
+	AfxBeginThread(&calculateMeanRDThread, NULL);
+	AfxBeginThread(&calculateRDThread, NULL);
+
 
 	vector<unsigned int> vuiInterfaces(MAX_INTERFACE_COUNT);
 	vector<DWORD> vdwResolutions(MAX_RESOULUTIONS);
@@ -338,8 +414,7 @@ UINT main_scan(LPVOID lpParamter)
 
 
 		if (bOK)
-		{
-			AfxBeginThread(&calculateRDThread, NULL);
+		{			
 			GetProfiles_Callback();
 		}
 
