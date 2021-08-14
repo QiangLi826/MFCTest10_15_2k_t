@@ -61,7 +61,6 @@ CCriticalSection criticalSectionProfileSample;
 
 
 
-
 std::deque<RD_Info> m_dqRD_Info; //车辙深度缓存队列
 CCriticalSection criticalSectionRD_Info;
 

@@ -8,13 +8,13 @@ RD_Info::~RD_Info(){}
 
 RD_Mean_Info::RD_Mean_Info()
 { 
-	double RD1 = 0;
-	double RD2 = 0;
-	double RD = 0;   	 
-	double length = 0;   
-	double v = 0;		 
-	double RD_result_100m_average = 0;
-	double RD2_result_200m_average = 0;	
+	RD1 = 0;
+	RD2 = 0;
+	RD = 0;   	 
+	length = 0;   
+	v = 0;		 
+	RD_result_100m_average = 0;
+	RD_result_200m_average = 0;	
 
 }
 

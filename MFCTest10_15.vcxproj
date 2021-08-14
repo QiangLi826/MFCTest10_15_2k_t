@@ -161,6 +161,7 @@
     <ClCompile Include="MyButton.cpp" />
     <ClCompile Include="MySocket.cpp" />
     <ClCompile Include="POINT3.cpp" />
+    <ClCompile Include="RDDialog.cpp" />
     <ClCompile Include="scanCONTROL2900\DllLoader.cpp" />
     <ClCompile Include="scanCONTROL2900\GetProfiles_Callback.cpp" />
     <ClCompile Include="scanCONTROL2900\InterfaceLLT_2.cpp" />
@@ -201,6 +202,7 @@
     <ClInclude Include="MyButton.h" />
     <ClInclude Include="MySocket.h" />
     <ClInclude Include="POINT3.h" />
+    <ClInclude Include="RDDialog.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="scanCONTROL2900\C_InterfaceLLT_2.h" />
     <ClInclude Include="scanCONTROL2900\DllLoader.h" />

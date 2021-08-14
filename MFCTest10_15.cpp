@@ -9,6 +9,7 @@
 #include "MFCTest10_15View.h"
 #include "serial/CnCommDlg.h"
 #include "IRIDialog.h"
+#include "RDDialog.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -27,6 +28,7 @@ BEGIN_MESSAGE_MAP(CMFCTest10_15App, CWinApp)
 	ON_COMMAND(ID_APP_ACCELERATION, &CMFCTest10_15App::OnAppAcceleration)
 	ON_COMMAND(ID_GPS, &CMFCTest10_15App::OnGps)
 	ON_COMMAND(ID_menu_iri, &CMFCTest10_15App::Onmenuiri)
+	ON_COMMAND(ID_32777, &CMFCTest10_15App::On32777)
 END_MESSAGE_MAP()
 
 
@@ -177,25 +179,48 @@ void CMFCTest10_15App::OnGps()
 	//dlg.DoModal();
 	
     // 创建非模态对话框实例   
-	if (dlg == NULL)
+	if (cnCommDlg == NULL)
 	{
-		dlg = new CnCommDlg();		
-		dlg->Create(CnCommDlg::IDD);   
+		cnCommDlg = new CnCommDlg();		
+		cnCommDlg->Create(CnCommDlg::IDD);   
 	}
   
     
     // 显示非模态对话框   
-    dlg->ShowWindow(SW_SHOW);   
+    cnCommDlg->ShowWindow(SW_SHOW);   
 	
 }
 
 
 void CMFCTest10_15App::Onmenuiri()
 {
-	IRIDialog dlg;
-	dlg.DoModal();
+	if (iriDialog == NULL)
+	{
+		iriDialog = new IRIDialog();		
+		iriDialog->Create(IRIDialog::IDD);   
+	}
+  
+    
+    // 显示非模态对话框   
+    iriDialog->ShowWindow(SW_SHOW);  
 }
 
 
 
 
+
+
+void CMFCTest10_15App::On32777()
+{
+
+	if (rdDialog == NULL)
+	{
+		rdDialog = new RDDialog();		
+		rdDialog->Create(RDDialog::IDD);   
+	}
+  
+    
+    // 显示非模态对话框   
+    rdDialog->ShowWindow(SW_SHOW);   
+
+}
