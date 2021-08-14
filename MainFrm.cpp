@@ -90,7 +90,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//char *argv[] = {"SensorTest", "ILD2300"};
 	//maint(2, argv);
 
-	//AfxBeginThread(&enter_ild2300, NULL);
+	AfxBeginThread(&enter_ild2300, NULL);
 
 	//µ÷ÓÃscanCONTROL2900
 	AfxBeginThread(&main_scan, NULL);

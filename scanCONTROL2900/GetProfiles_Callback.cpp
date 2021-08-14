@@ -271,7 +271,7 @@ UINT main_scan(LPVOID lpParamter)
 	vector<DWORD> vdwResolutions(MAX_RESOULUTIONS);
 	unsigned int uiInterfaceCount = 0;
 	unsigned int uiExposureTime = 100;
-	unsigned int uiIdleTime = 400;
+	unsigned int uiIdleTime = 3900;
 	bool bLoadError = false;
 	int iRetValue = 0;
 	bool bOK = true;
