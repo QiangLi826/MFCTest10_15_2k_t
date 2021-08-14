@@ -56,3 +56,13 @@ CString RD_Mean_Info::toString()
 	return output;
 }
 
+ProfileSample::ProfileSample(){};
+
+ProfileSample::~ProfileSample(){};
+
+
+
+
+
+
+

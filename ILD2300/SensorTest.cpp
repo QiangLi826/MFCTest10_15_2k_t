@@ -764,16 +764,14 @@ void pushILD2300Info(ILD2300_Infos_Buffer& infos_buffer)
 }
 
 
-//计算速度和距离 By GPS
-void getVelocityByGPS(double& distance, double& v, bool& isGPSInfoValid)
+//计算速度
+void getVelocityByGPS(double& v, bool& isGPSInfoValid)
 {	
 	//gps功能是否打开
 	if (!g_isGPSOpen || g_VelocityFreshCyclePass >= INVALID_VELOCITY_FRESH_CYCLE)
 	{
-		distance = INVALID_VALUE;
 		v = INVALID_VALUE;
 		isGPSInfoValid = false;
-
 		return;
 	}
 
@@ -888,10 +886,9 @@ bool GetData (uint32_t sensorInstance)
 		
 			ILD2300_Infos_Buffer infos_buffer;
 			std::vector<ILD2300_Info> &ILD2300_infos_tmp = infos_buffer.infos_v; //或者使用BufSize
-			
-			
+						
 
-			getVelocityByGPS(infos_buffer.distance, infos_buffer.v, infos_buffer.isGPSInfoValid);
+			getVelocityByGPS(infos_buffer.v, infos_buffer.isGPSInfoValid);
 
 			calculateDistance(infos_buffer, read, frequency);
 			infos_buffer.frequency = frequency;
@@ -1005,7 +1002,7 @@ boolean isDataEnough()
 	{
 		count += it->distance;
 		//保证有g_IRILength米数据
-		if (count > g_IRILength)
+		if (count >= g_IRILength)
 			return true;
 	}
 

@@ -1,4 +1,4 @@
-
+#include <vector>
 class RD_Mean_Info
 {
 	public:
@@ -14,6 +14,16 @@ class RD_Mean_Info
 		CString toString();		
 };
 
+class ProfileSample
+{
+
+	public:
+		ProfileSample() ;
+		std::vector<double> vdValueZ;
+		double distance;
+		double v;	// m/s		
+		~ProfileSample() ;
+};
 
 class RD_Info
 {
@@ -23,11 +33,13 @@ class RD_Info
 		int kind; 
 		double RD1;		
 		double RD2;	
+		double distance;
+		double v;	// m/s
 		~RD_Info();
 };
 
 
-#define MAX_RD_INFO_LENGTH 100
+#define MAX_RD_INFO_LENGTH 800 //200HZ 能存4s的数据。
 
 
 

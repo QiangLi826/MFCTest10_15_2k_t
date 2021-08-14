@@ -32,6 +32,7 @@ unsigned int m_uiReceivedProfileCount = 0;
 unsigned int m_uiProfileDataSize;
 HANDLE m_hProfileEvent = CreateEvent(NULL, true, false, "ProfileEvent");
 
+int m_frequency = 200;  //对接线激光时会再初始化一次。
 
 #define PROFILE_BUFFER_SIZE 2
 
@@ -56,7 +57,7 @@ ProfileDataContext m_ProfileDataContext;
 
 #define MAX_PROFILE_SAMPLE_LENGTH 100
 #include <deque>
-std::deque<vector<double>> m_dqProfileSample; //profile采样后缓存队列
+std::deque<ProfileSample> m_dqProfileSample; //profile采样后缓存队列
 CCriticalSection criticalSectionProfileSample;
 
 
@@ -72,40 +73,78 @@ std::deque<RD_Mean_Info> m_dqRD_show;  //用于在界面上展示RD结果。
 CCriticalSection criticalSectionRD_show;
 
 
+extern void getVelocityByGPS(double& v, bool& isGPSInfoValid);
+int g_RDLength = 10; //每次计算rd需要的里程,单位m
+
+//判断计算10m rd的数据是否充足
+bool isDataEnough()
+{
+	double count = 0;
+	for (std::deque<RD_Info>::iterator it = m_dqRD_Info.begin(); 
+		it != m_dqRD_Info.end(); ++it)
+	{
+		count += it->distance;
+		//保证有g_IRILength米数据
+		if (count >= g_RDLength)
+			return true;
+	}
+
+	//发生这种情况应该是通过gps计算的车速太慢了。
+	if (m_dqRD_Info.size() >= MAX_RD_INFO_LENGTH * 0.8)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+
 
 //计算平均车辙深度线程
 UINT calculateMeanRDThread(LPVOID lparam)
 {	
 	while(1){
-		Sleep(100);
+		Sleep(50);
 
 		double RD1=0;		
 		double RD2=0;	
 		criticalSectionRD_Info.Lock();
 		int rd_size = m_dqRD_Info.size();
-		if (rd_size<=0)
+		if (!isDataEnough())
 		{
 			criticalSectionRD_Info.Unlock();
 			continue;
-		}		
+		}
 
-		for (int i = 0; i < rd_size; i++)
+
+		double total_distance = 0;
+		int i = 0;
+		for (i; i < rd_size; i++)
 		{
 			RD1 += m_dqRD_Info.front().RD1;
 			RD2 += m_dqRD_Info.front().RD2;
+			total_distance += m_dqRD_Info.front().distance;
 			m_dqRD_Info.pop_front();
+			if (total_distance >= g_RDLength)
+			{
+				break;
+			}			
 		}
 
-		RD1 = RD1/rd_size;
-		RD2 = RD2/rd_size;
+		RD1 = RD1/(i+1);
+		RD2 = RD2/(i+1);
+		double v = total_distance * m_frequency / (i + 1 );
 		criticalSectionRD_Info.Unlock();
+
 
 
 		RD_Mean_Info rd_mean;
 		rd_mean.RD1 = RD1;
 		rd_mean.RD2 = RD2;
 		rd_mean.RD = RD1 >= RD2 ? RD1 : RD2;
-		rd_mean.length = 10; //默认10米统计一次RD均值。
+		rd_mean.length = total_distance; //默认10米统计一次RD均值。
+		rd_mean.v = v * 3600 / 1000;
+
 
 		if (m_dqRD_mean_info.size() >= MAX_RD_MEAN_Info)
 		{
@@ -175,11 +214,12 @@ UINT calculateRDThread(LPVOID lparam)
 			Sleep(10);
 			continue;
 		}		
-	
-		vector<double> porfile = m_dqProfileSample.front();
+
+	    ProfileSample profileSample = m_dqProfileSample.front();		
 		m_dqProfileSample.pop_front();
 		criticalSectionProfileSample.Unlock();
 
+		vector<double> porfile = profileSample.vdValueZ;
 
 		//cout <<"porfile.size:" << porfile.size() << "\n";
 		//double f[17] = {0, 5, -5, -15, -15, -12.47, -2.48, 7.5, 10, 8, 0, -7.96, -10, -10, -2.48, 5, 0};
@@ -199,6 +239,9 @@ UINT calculateRDThread(LPVOID lparam)
 		RD_Info rd_info;
 		PyArg_ParseTuple(pRetVal,"idd",&rd_info.kind, &rd_info.RD1, &rd_info.RD2);
 		//cout <<"chezhe----kind:" << rd_info.kind << " RD1:"<< rd_info.RD1 <<  " RD2:" << rd_info.RD2 << "\n";	
+
+		rd_info.distance = profileSample.distance;
+		rd_info.v = profileSample.v;
 
 		criticalSectionRD_Info.Lock();
 		if (m_dqRD_Info.size()<MAX_RD_INFO_LENGTH)
@@ -402,6 +445,9 @@ UINT main_scan(LPVOID lpParamter)
 				OnError("Error during SetFeature(FEATURE_FUNCTION_IDLE_TIME)", iRetValue);
 				bOK = false;
 			}
+
+			// uiExposureTime 单位是us
+			m_frequency = 1000000 / ((uiExposureTime+uiIdleTime) * 10);
 		}
 
 		// Resize the profile buffer to the estimated profile size
@@ -557,25 +603,51 @@ void OnError(const char* szErrorTxt, int iErrorValue)
 		cout << acErrorString << "\n\n";
 }
 
+//根据车速计算频率和行车距离
+void calculateRDDistance(double&  distance, bool isGPSInfoValid, double& v)
+{
+	double frequency = m_frequency; //HZ
+	
+	double vPerSecond;
+	if (isGPSInfoValid)
+	{
+		vPerSecond = v;		
+	}
+	else
+	{
+		// GPS无效的情况下，默认行车速度为20km/h
+		vPerSecond = 20. * 1000 / 3600; // m/s	
+		v = vPerSecond;
+	}
+
+	distance = vPerSecond / frequency;
+}
+
+
+
 // Displays one profile
 void DisplayProfile(double* pdValueX, double* pdValueZ, unsigned int uiResolution)
 {
 	int sampleCount = 17;
 	int sampleInterval = (uiResolution-1) / (sampleCount -1);
-
-	vector<double> porfile(sampleCount);
+	ProfileSample profileSample;
+	profileSample.vdValueZ.resize(sampleCount);
 	int count = 0;
 	for (unsigned int i = 0; i < uiResolution; i+=sampleInterval)
 	{		
-		porfile[count] = pdValueZ[i];
+		profileSample.vdValueZ[count] = pdValueZ[i];
 		count++;
 	}
+
+	bool isGPSInfoValid  = false;
+	getVelocityByGPS(profileSample.v, isGPSInfoValid);
+	calculateRDDistance(profileSample.distance, isGPSInfoValid, profileSample.v);
 
 	criticalSectionProfileSample.Lock();
 	if (m_dqProfileSample.size() < MAX_PROFILE_SAMPLE_LENGTH)
 	{
-		m_dqProfileSample.push_back(porfile);
-		cout <<"m_dqProfileSample.size:" << m_dqProfileSample.size() << "\n";
+		m_dqProfileSample.push_back(profileSample);
+		//cout <<"m_dqProfileSample.size:" << m_dqProfileSample.size() << "\n";
 	}
 	else
 	{
