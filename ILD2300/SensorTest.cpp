@@ -915,6 +915,10 @@ bool GetData (uint32_t sensorInstance)
 				ILD2300_infos_tmp.push_back(tmp_info);
 				}
 			
+			if (ILD2300_infos_tmp.size()<=0)
+			{
+				continue;
+			}
 			pushILD2300Info(infos_buffer);
 #if !defined(_WIN32)
 			fflush( stdout );
@@ -976,6 +980,9 @@ void getDistances(std::vector<double>* distances, double& v, double& total_dista
 			total_distance = total_distance - info_buffer.distance;
 			total_time = total_time - info_buffer.distance/info_buffer.v;		
 			tmp_v->erase(tmp_v->begin(),tmp_v->begin() + count -1);
+			g_ILD2300_infos_buffer.pop_front();
+			g_ILD2300_infos_buffer.push_front(info_buffer);
+
 			is_break = true;
 		}
 		else
