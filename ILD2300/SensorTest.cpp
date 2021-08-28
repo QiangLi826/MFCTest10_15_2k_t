@@ -101,12 +101,15 @@ CString IRI_Info::toString()
 		output += tmp;
 	}
 
-	tmp.Format(_T(", SMTD %-.3f "), SMTD_result); 
+	tmp.Format(_T(", SMTD %-.3f mm"), SMTD_result); 
+	output += tmp;
+
+	tmp.Format(_T(", MPD %-.3f mm"), MPD); 
 	output += tmp;
 
 	if (SMTD_result_200m_average > 0.0)
 	{
-		tmp.Format(_T("，200m SMTD: %-.3f"), SMTD_result_200m_average); 
+		tmp.Format(_T("，200m SMTD: %-.3f mm"), SMTD_result_200m_average); 
 		output += tmp;
 	}
 	
@@ -792,9 +795,9 @@ void getVelocityByGPS(double& v, bool& isGPSInfoValid)
 
 	//测试时，gps数据有时不准确，得到的值有可能很夸张。 速度太快可能导致队列数据积压。
 	// 55m/s=200km/h
-	if (v > 55)
+	if (v > 40)
 	{
-		v = 55;
+		v = 40;
 	}
 
 	isGPSInfoValid = true;
@@ -1026,7 +1029,8 @@ boolean isDataEnough()
 }
 
 //拼装IRI展示信息。
-void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_result, double v,double SMTD, double detalH)
+void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_result, double v,
+	double SMTD, double detalH, double MPD)
 {
 	iriInfo.dx = dx;
 	iriInfo.IRI_length = IRI_length;
@@ -1037,7 +1041,7 @@ void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_resu
 	iriInfo.SMTD_result = SMTD;
 	iriInfo.SMTD_result_200m_average = 0.0;
 	iriInfo.deltaH = detalH;
-
+	iriInfo.MPD = MPD;
 
 	if (IRI_infosRaw.size() >= MAX_IRI_RAW_Info)
 	{
@@ -1079,11 +1083,77 @@ void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_resu
 	}
 }
 
+//转换成iri需要的高程数据。
+void getMPD(double sampleLength, std::vector<double> &distances, double& meanMPD)
+{
+	std::vector<double> tmpDistances;
+	int pointCount = g_IRIMeanDx * 1000 / sampleLength; //求0.1m内平均高程点数
+	pointCount = pointCount == 0 ? 1 : pointCount; //保证pointCount>0
+
+	//小于等于两个点无法计算。
+	if (pointCount <= 2)
+	{
+		meanMPD = 0;
+		return;
+	}
+
+	int size = distances.size();
+	int k = 0;
+	double total = 0;
+	double totalMPD = 0;
+	int count = 0;
+	for (int i = 0; i < size; i++)
+	{
+
+		k++;
+		total += distances[i];
+		tmpDistances.push_back(distances[i]);
+
+		if (k == pointCount)
+		{
+			double mean = total / pointCount;
+			int midPositon = pointCount/2;
+
+			auto maxPosition1 = max_element(tmpDistances.begin(), tmpDistances.begin() + pointCount /2);
+			auto maxPosition2 = max_element(tmpDistances.begin() + pointCount /2, tmpDistances.end());
+			double MPD = (tmpDistances[maxPosition1 - tmpDistances.begin()] + 
+				tmpDistances[maxPosition2 - tmpDistances.begin()])/2  - mean;
+
+			totalMPD += MPD;
+			
+			k = 0; total = 0;
+			tmpDistances.clear();
+			count++;
+		}
+
+		//将超过pointCount整数倍后的数据求平均高程。
+		if (i == size - 1 && total >0)
+		{
+			int loop = size % pointCount;
+			if (loop <=2)
+			{
+				break;
+			}
+			double mean = total / loop;
+			auto maxPosition1 = max_element(tmpDistances.begin(), tmpDistances.begin() + loop /2);
+			auto maxPosition2 = max_element(tmpDistances.begin() + loop /2, tmpDistances.end());
+			double MPD = (tmpDistances[maxPosition1 - tmpDistances.begin()] + 
+				tmpDistances[maxPosition2 - tmpDistances.begin()])/2  - mean;
+
+			totalMPD += MPD;
+			count++;
+		}
+	}
+
+	meanMPD = totalMPD/count;
+}
+
+
 
 //转换成iri需要的高程数据。
 void getIRIDistances(double sampleLength, std::vector<double>& distances, std::vector<double>& IRIdistances)
 {
-	int pointCount = g_IRIMeanDx / sampleLength; //求0.1m内平均高程点数
+	int pointCount = g_IRIMeanDx * 1000 / sampleLength; //求0.1m内平均高程点数
 	pointCount = pointCount == 0 ? 1 : pointCount; //保证pointCount>0
 
 	int size = distances.size();
@@ -1149,6 +1219,8 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		
 		calculateSMTDs(L ,D, l, distances, SMTD);
 
+		double MPD = 0;
+		getMPD(sampleLength, distances, MPD);
 
 		std::vector<double> IRIdistances;
 		getIRIDistances(sampleLength, distances, IRIdistances);
@@ -1169,7 +1241,7 @@ UINT processILD2300InfosThread(LPVOID lparam)
 
 		//整理打印数据
 		IRI_Info iriInfo;
-		getIRIInfo(iriInfo, g_IRIMeanDx, total_distance, IRI_result, v, SMTD, detalH);
+		getIRIInfo(iriInfo, g_IRIMeanDx, total_distance, IRI_result, v, SMTD, detalH, MPD);
 
 		criticalSectionIRI.Lock();
 		if (IRI_infos.size() >= 10)

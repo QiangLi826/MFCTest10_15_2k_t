@@ -14,6 +14,7 @@ class IRI_Info
 		double SMTD_result;
 		double SMTD_result_200m_average;
 		double deltaH;
+		double MPD;
 		~IRI_Info();
 		CString toString();		
 };
