@@ -26,6 +26,7 @@
 #include "algorithm/SMTD.h"
 #include "SensorTest.h"
 #include "GPS_Info.h"
+#include <algorithm>
 
 static bool sensorIsMEBUS= false;
 static bool sensorIsMultiSensor= false;
@@ -109,6 +110,8 @@ CString IRI_Info::toString()
 		output += tmp;
 	}
 	
+	tmp.Format(_T("，deltaH: %-.3f cm"), deltaH*100); 
+	output += tmp;
 	return output;
 };
 
@@ -1023,7 +1026,7 @@ boolean isDataEnough()
 }
 
 //拼装IRI展示信息。
-void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_result, double v,double SMTD)
+void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_result, double v,double SMTD, double detalH)
 {
 	iriInfo.dx = dx;
 	iriInfo.IRI_length = IRI_length;
@@ -1033,6 +1036,8 @@ void getIRIInfo(IRI_Info& iriInfo, double dx, double IRI_length, double IRI_resu
 	iriInfo.IRI_result_320m_average = 0.0;
 	iriInfo.SMTD_result = SMTD;
 	iriInfo.SMTD_result_200m_average = 0.0;
+	iriInfo.deltaH = detalH;
+
 
 	if (IRI_infosRaw.size() >= MAX_IRI_RAW_Info)
 	{
@@ -1148,6 +1153,12 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		std::vector<double> IRIdistances;
 		getIRIDistances(sampleLength, distances, IRIdistances);
 
+		auto maxPosition = max_element(IRIdistances.begin(), IRIdistances.end());
+		auto minPosition = min_element(IRIdistances.begin(), IRIdistances.end());
+		double detalH = IRIdistances[maxPosition - IRIdistances.begin()] - 
+			IRIdistances[minPosition - IRIdistances.begin()] ;
+
+
 
 		//计算IRI
 		double IRI_length = 0.0;
@@ -1155,9 +1166,10 @@ UINT processILD2300InfosThread(LPVOID lparam)
 		iri(IRIdistances, g_IRIMeanDx, v, &IRI_length, &IRI_result);		
 
 
+
 		//整理打印数据
 		IRI_Info iriInfo;
-		getIRIInfo(iriInfo, g_IRIMeanDx, total_distance, IRI_result, v, SMTD);
+		getIRIInfo(iriInfo, g_IRIMeanDx, total_distance, IRI_result, v, SMTD, detalH);
 
 		criticalSectionIRI.Lock();
 		if (IRI_infos.size() >= 10)
