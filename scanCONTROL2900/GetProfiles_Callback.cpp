@@ -197,7 +197,7 @@ UINT calculateMeanRDThread(LPVOID lparam)
 UINT calculateRDThread(LPVOID lparam)
 {
 	//根据环境设置pythonHome
-	Py_SetPythonHome(L"D:\\ProgramData\\Miniconda3");
+	Py_SetPythonHome(L"D:\\ProgramData\\Miniconda3_32");
 	Py_Initialize();//使用python之前，要调用Py_Initialize();这个函数进行初始化
 	PyRun_SimpleString("import sys"); /*调用python文件*/
 	PyRun_SimpleString("sys.path.append('./scanCONTROL2900/')");
