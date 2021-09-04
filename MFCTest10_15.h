@@ -10,6 +10,7 @@
 #include "serial/CnCommDlg.h"
 #include "RDDialog.h"
 #include "IRIDialog.h"
+#include "MyChartCtrlTestDlg.h"
 
 // CMFCTest10_15App:
 // 有关此类的实现，请参阅 MFCTest10_15.cpp
@@ -22,6 +23,7 @@ public:
 	CnCommDlg *cnCommDlg;
 	RDDialog *rdDialog;
 	IRIDialog *iriDialog;
+	CMyChartCtrlTestDlg *iriChartDlg;
 	
 // 重写
 public:
@@ -35,6 +37,7 @@ public:
 	afx_msg void OnGps();
 	afx_msg void Onmenuiri();	
 	afx_msg void On32777();
+	afx_msg void OnIriChart();
 };
 
 extern CMFCTest10_15App theApp;

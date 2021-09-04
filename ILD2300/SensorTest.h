@@ -1,5 +1,6 @@
 UINT enter_ild2300 (LPVOID lpParamter);
 #define INVALID_VELOCITY_FRESH_CYCLE 50000//随便设置的一个大数，gps开启的情况下，不使用默认速度。
+#include <vector>
 
 class IRI_Info
 {
@@ -19,6 +20,36 @@ class IRI_Info
 		CString toString();		
 };
 
+class ILD2300_Info
+{
+
+	public:
+		ILD2300_Info() {
+		}
+		//uint32_t rawData; // Distance1 
+		double scaledData; // Distance1 scaledData
+		double timestamp;
+		//double frequency;
+		~ILD2300_Info() {
+		}
+};
+
+
+
+class ILD2300_Infos_Buffer
+{
+
+	public:
+		ILD2300_Infos_Buffer() {
+		}
+		std::vector<ILD2300_Info> infos_v;
+		double distance;
+		double v;	// m/s
+		double frequency;
+		bool isGPSInfoValid;		
+		~ILD2300_Infos_Buffer() {
+		}
+};
 
 
 

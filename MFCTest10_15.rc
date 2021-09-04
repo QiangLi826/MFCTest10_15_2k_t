@@ -144,6 +144,7 @@ BEGIN
         MENUITEM "GPS",                         ID_GPS
         MENUITEM "IRI",                         ID_menu_iri
         MENUITEM "³µÕÞ",                          ID_32777
+        MENUITEM "IRI Chart",                   ID_IRI_CHART
     END
 END
 
@@ -538,6 +539,15 @@ BEGIN
     EDITTEXT        IDC_EDIT_RD,7,19,631,253,ES_MULTILINE | ES_AUTOHSCROLL | WS_VSCROLL
 END
 
+IDD_MYCHARTCTRLTEST_DIALOG DIALOGEX 0, 0, 320, 200
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "MyChartCtrlTest"
+FONT 9, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "ChartCtrl",IDC_CHART,"ChartCtrl",WS_CLIPCHILDREN | WS_TABSTOP,7,7,306,186
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -669,6 +679,14 @@ BEGIN
         RIGHTMARGIN, 675
         TOPMARGIN, 7
         BOTTOMMARGIN, 309
+    END
+
+    IDD_MYCHARTCTRLTEST_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 313
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 193
     END
 END
 #endif    // APSTUDIO_INVOKED

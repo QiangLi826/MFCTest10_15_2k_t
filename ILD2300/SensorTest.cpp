@@ -41,35 +41,6 @@ double g_SMTDMaxSampleLength=2; //采样间隔dx不能超过2mm
 static int32_t counterIndex= -1;
 #endif
 
-class ILD2300_Info
-{
-
-	public:
-		ILD2300_Info() {
-		}
-		//uint32_t rawData; // Distance1 
-		double scaledData; // Distance1 scaledData
-		double timestamp;
-		//double frequency;
-		~ILD2300_Info() {
-		}
-};
-
-class ILD2300_Infos_Buffer
-{
-
-	public:
-		ILD2300_Infos_Buffer() {
-		}
-		std::vector<ILD2300_Info> infos_v;
-		double distance;
-		double v;	// m/s
-		double frequency;
-		bool isGPSInfoValid;		
-		~ILD2300_Infos_Buffer() {
-		}
-};
-
 
 
 IRI_Info::IRI_Info() 
@@ -133,6 +104,10 @@ std::deque<IRI_Info> IRI_infosRaw;
 uint32_t indexDistance1 = 0;
 std::deque<ILD2300_Infos_Buffer> g_ILD2300_infos_buffer;
 CCriticalSection criticalSectionILD2300;
+
+//用于line chart缓存
+std::deque<ILD2300_Infos_Buffer> g_ILD2300_infos_buffer_chart;
+CCriticalSection criticalSectionILD2300Chart;
 
 
 extern CString g_currentGpsStr;
@@ -759,6 +734,18 @@ void pushILD2300Info(ILD2300_Infos_Buffer& infos_buffer)
 		//printf("pushILD2300Info \n\r");
 		g_ILD2300_infos_buffer.push_back(infos_buffer); //互斥访问当缓存队列	
 		criticalSectionILD2300.Unlock();
+
+		if (g_ILD2300_infos_buffer.size() < MAX_ILD2300_Infos_Buffer)
+		{
+			criticalSectionILD2300Chart.Lock();
+			g_ILD2300_infos_buffer_chart.push_back(infos_buffer);
+			criticalSectionILD2300Chart.Unlock();
+		}
+		else
+		{
+			// 缓存队列满，不再添加数据
+			printf("g_ILD2300_infos_buffer_chart queue is full\r");	
+		}
 		infos_buffer.infos_v.clear();
 	}
 	else

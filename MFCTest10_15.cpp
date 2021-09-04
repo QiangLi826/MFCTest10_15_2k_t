@@ -29,6 +29,7 @@ BEGIN_MESSAGE_MAP(CMFCTest10_15App, CWinApp)
 	ON_COMMAND(ID_GPS, &CMFCTest10_15App::OnGps)
 	ON_COMMAND(ID_menu_iri, &CMFCTest10_15App::Onmenuiri)
 	ON_COMMAND(ID_32777, &CMFCTest10_15App::On32777)
+	ON_COMMAND(ID_IRI_CHART, &CMFCTest10_15App::OnIriChart)
 END_MESSAGE_MAP()
 
 
@@ -223,4 +224,18 @@ void CMFCTest10_15App::On32777()
     // 显示非模态对话框   
     rdDialog->ShowWindow(SW_SHOW);   
 
+}
+
+
+void CMFCTest10_15App::OnIriChart()
+{
+	if (iriChartDlg == NULL)
+	{
+		iriChartDlg = new CMyChartCtrlTestDlg();		
+		iriChartDlg->Create(CMyChartCtrlTestDlg::IDD);   
+	}
+  
+    
+    // 显示非模态对话框   
+    iriChartDlg->ShowWindow(SW_SHOW);  
 }
